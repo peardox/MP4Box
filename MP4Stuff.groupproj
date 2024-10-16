@@ -1,0 +1,48 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{0060B97C-F119-4A3D-AD06-E1ACC2C0A0F2}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="src\MP4Box\Mp4Box.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="src\MP4CodeUtils\MP4CodeUtils.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="Mp4Box">
+        <MSBuild Projects="src\MP4Box\Mp4Box.dproj"/>
+    </Target>
+    <Target Name="Mp4Box:Clean">
+        <MSBuild Projects="src\MP4Box\Mp4Box.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="Mp4Box:Make">
+        <MSBuild Projects="src\MP4Box\Mp4Box.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="MP4CodeUtils">
+        <MSBuild Projects="src\MP4CodeUtils\MP4CodeUtils.dproj"/>
+    </Target>
+    <Target Name="MP4CodeUtils:Clean">
+        <MSBuild Projects="src\MP4CodeUtils\MP4CodeUtils.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="MP4CodeUtils:Make">
+        <MSBuild Projects="src\MP4CodeUtils\MP4CodeUtils.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="Mp4Box;MP4CodeUtils"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="Mp4Box:Clean;MP4CodeUtils:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="Mp4Box:Make;MP4CodeUtils:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>
