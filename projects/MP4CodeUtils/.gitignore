@@ -41,6 +41,7 @@ Linux64/
 # Delphi compiler-generated binaries (safe to delete)
 *.exe
 *.dll
+*.xml
 *.bpl
 *.bpi
 *.dcp
