@@ -3,10 +3,10 @@
         <ProjectGuid>{0060B97C-F119-4A3D-AD06-E1ACC2C0A0F2}</ProjectGuid>
     </PropertyGroup>
     <ItemGroup>
-        <Projects Include="src\MP4Box\Mp4Box.dproj">
+        <Projects Include="projects\MP4Explorer\MP4Explorer.dproj">
             <Dependencies/>
         </Projects>
-        <Projects Include="src\MP4CodeUtils\MP4CodeUtils.dproj">
+        <Projects Include="projects\MP4CodeUtils\Mp4CodeUtils.dproj">
             <Dependencies/>
         </Projects>
     </ItemGroup>
@@ -17,32 +17,32 @@
             <Default.Personality/>
         </BorlandProject>
     </ProjectExtensions>
-    <Target Name="Mp4Box">
-        <MSBuild Projects="src\MP4Box\Mp4Box.dproj"/>
+    <Target Name="MP4Explorer">
+        <MSBuild Projects="projects\MP4Explorer\MP4Explorer.dproj"/>
     </Target>
-    <Target Name="Mp4Box:Clean">
-        <MSBuild Projects="src\MP4Box\Mp4Box.dproj" Targets="Clean"/>
+    <Target Name="MP4Explorer:Clean">
+        <MSBuild Projects="projects\MP4Explorer\MP4Explorer.dproj" Targets="Clean"/>
     </Target>
-    <Target Name="Mp4Box:Make">
-        <MSBuild Projects="src\MP4Box\Mp4Box.dproj" Targets="Make"/>
+    <Target Name="MP4Explorer:Make">
+        <MSBuild Projects="projects\MP4Explorer\MP4Explorer.dproj" Targets="Make"/>
     </Target>
-    <Target Name="MP4CodeUtils">
-        <MSBuild Projects="src\MP4CodeUtils\MP4CodeUtils.dproj"/>
+    <Target Name="Mp4CodeUtils">
+        <MSBuild Projects="projects\MP4CodeUtils\Mp4CodeUtils.dproj"/>
     </Target>
-    <Target Name="MP4CodeUtils:Clean">
-        <MSBuild Projects="src\MP4CodeUtils\MP4CodeUtils.dproj" Targets="Clean"/>
+    <Target Name="Mp4CodeUtils:Clean">
+        <MSBuild Projects="projects\MP4CodeUtils\Mp4CodeUtils.dproj" Targets="Clean"/>
     </Target>
-    <Target Name="MP4CodeUtils:Make">
-        <MSBuild Projects="src\MP4CodeUtils\MP4CodeUtils.dproj" Targets="Make"/>
+    <Target Name="Mp4CodeUtils:Make">
+        <MSBuild Projects="projects\MP4CodeUtils\Mp4CodeUtils.dproj" Targets="Make"/>
     </Target>
     <Target Name="Build">
-        <CallTarget Targets="Mp4Box;MP4CodeUtils"/>
+        <CallTarget Targets="MP4Explorer;Mp4CodeUtils"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="Mp4Box:Clean;MP4CodeUtils:Clean"/>
+        <CallTarget Targets="MP4Explorer:Clean;Mp4CodeUtils:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="Mp4Box:Make;MP4CodeUtils:Make"/>
+        <CallTarget Targets="MP4Explorer:Make;Mp4CodeUtils:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

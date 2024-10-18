@@ -7,20 +7,16 @@ uses
   Generics.Defaults, Generics.Collections, MP4Types;
 
 type
-  TMp4Flags = Array[0..2] of Byte;
-  TFixed32 = Int32;
-  { Fixed point number 16:16 }
-  TFixed16 = Int16;
-  { Fixed point number 8:8 }
-  TMatrix = Array[0..2, 0..2] of TFixed32;
-  { 3x3 Matrix }
-
   TAtomBaseData = class(TObject)
+  strict
   private
   protected
     function ReadSingle(var BufPos: Int64; var AStream: TStream): Single;
-    function MediaTime(const ATime: UInt32): TDateTime;
+    function UIntToMediaTime(const ATime: UInt32): TDateTime;
+    function ReadFourCCArray(var BufPos: Int64; var AStream: TStream;
+      const ASize: Int32): TMP4FourCCArray;
     function ReadMediaDateTime(var BufPos: Int64; var AStream: TStream): TDateTime;
+    function ReadFourCC(var BufPos: Int64; var AStream: TStream): TMP4FourCC;
     function ReadUInt32(var BufPos: Int64; var AStream: TStream): UInt32;
     function ReadUInt16(var BufPos: Int64; var AStream: TStream): UInt16;
     procedure ReadSkip(var BufPos: Int64; var AStream: TStream; const ASize: Int32);
@@ -28,20 +24,57 @@ type
     constructor Create; virtual;
   end;
 
-  TAtomFullData = class(TAtomBaseData)
+  TAtomAbstractData = class(TAtomBaseData)
+  strict
   private
-    FVersion: Byte;
-    { 1 byte - Version - Always 0 }
-    FFlags: TMp4Flags;
-    { 3 bytes - Flags - Always 0 }
   public
     constructor Create; override;
     constructor CreateFromStream(var AStream: TStream; const ASize: Int64);
-    procedure PopulateFromStream(var AStream: TStream; const ASize: Int64);
-    procedure ReadFromStream(var BufPos: Int64; var AStream: TStream); virtual; abstract;
+    procedure PopulateFromStream(var AStream: TStream; const ASize: Int64); virtual; abstract;
+    procedure ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64); virtual; abstract;
+  end;
+
+  TAtomTinyData = class(TAtomAbstractData)
+  strict
+  private
+  public
+    constructor Create; override;
+    procedure PopulateFromStream(var AStream: TStream; const ASize: Int64); override;
+  end;
+
+  TAtomFullData = class(TAtomAbstractData)
+  strict
+  private
+    FVersion: Byte;
+    { 1 byte - Version - Always 0 }
+    FFlags: TMP4Flags;
+    { 3 bytes - Flags - Always 0 }
+  public
+    constructor Create; override;
+    procedure PopulateFromStream(var AStream: TStream; const ASize: Int64); override;
+  end;
+
+  TAtomFtyp = class(TAtomTinyData)
+  strict
+  private
+    { ftyp object }
+    FMajorBrand: TMP4FourCC;
+    { 4 bytes - Major Brand }
+    FMinorBrand: TMP4FourCC;
+    { 4 bytes - Minor Brand }
+    FCompatibleBrands: TMP4FourCCArray;
+    { X bytes - Compatible Brands - Varable array of types }
+  public
+    procedure ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64); override;
+    property MajorBrand: TMP4FourCC read FMajorBrand write FMajorBrand;
+    { 4 bytes - Major Brand }
+    property MinorBrand: TMP4FourCC read FMinorBrand write FMinorBrand;
+    { 4 bytes - Minor Brand }
+    property CompatibleBrands: TMP4FourCCArray read FCompatibleBrands write FCompatibleBrands;
   end;
 
   TAtomMvhd = class(TAtomFullData)
+  strict
   private
     FCreationTime: TDateTime;
     { 4 bytes - Creation Time }
@@ -51,16 +84,16 @@ type
     { 4 bytes - TimeScale - units per second }
     FDuration: UInt32;
     { 4 bytes - Actual Duration - FDuration * (1/FTimeScale) Seconds }
-    FPreferredRate: TFixed32;
+    FPreferredRate: TMP4Fixed32;
     { 4 bytes - Preferred Rate - 1.0 = Normal }
-    FPreferredVolume: TFixed16;
+    FPreferredVolume: TMP4Fixed16;
     { 2 bytes - Preferred Volume - 1.0 = Normal }
     {$HINTS OFF}
     FReserved: Array[0..9] of Byte;
     { 10 bytes - Reserved For Apple - Skipped completely }
     {$HINTS ON}
-    FMatrixStructure: TMatrix;
-    { 36 bytes - Matrix Structure - TFixed16 3x3 Matrix }
+    FMatrixStructure: TMP4Matrix;
+    { 36 bytes - Matrix Structure - TMP4Fixed16 3x3 Matrix }
     FPreviewTime: UInt32;
     { 4 bytes - Preview time - in TimeScale units }
     FPreviewDurartion: UInt32;
@@ -76,14 +109,14 @@ type
     FNextTrackID: UInt32;
     { 4 bytes - Next Track ID }
   public
-    procedure ReadFromStream(var BufPos: Int64; var AStream: TStream); override;
+    procedure ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64); override;
     property CreationTime: TDateTime read FCreationTime write FCreationTime;
     property ModificationTime: TDateTime read FModificationTime write FModificationTime;
     property TimeScale: UInt32 read FTimeScale write FTimeScale;
     property Duration: UInt32 read FDuration write FDuration;
-    property PreferredRate: TFixed32 read FPreferredRate write FPreferredRate;
-    property PreferredVolume: TFixed16 read FPreferredVolume write FPreferredVolume;
-    property MatrixStructure: TMatrix read FMatrixStructure write FMatrixStructure;
+    property PreferredRate: TMP4Fixed32 read FPreferredRate write FPreferredRate;
+    property PreferredVolume: TMP4Fixed16 read FPreferredVolume write FPreferredVolume;
+    property MatrixStructure: TMP4Matrix read FMatrixStructure write FMatrixStructure;
     property PreviewTime: UInt32 read FPreviewTime write FPreviewTime;
     property PreviewDurartion: UInt32 read FPreviewDurartion write FPreviewDurartion;
     property PosterTime: UInt32 read FPosterTime write FPosterTime;
@@ -94,13 +127,13 @@ type
 
 implementation
 
-{ TAtomData }
+{ TAtomBaseData }
 
 constructor TAtomBaseData.Create;
 begin
 end;
 
-function TAtomBaseData.MediaTime(const ATime: UInt32): TDateTime;
+function TAtomBaseData.UIntToMediaTime(const ATime: UInt32): TDateTime;
 var
   Secs: UInt32;
   Days: UInt32;
@@ -112,6 +145,45 @@ begin
   Result := TDateTime(DateFloat);
 end;
 
+function TAtomBaseData.ReadFourCC(var BufPos: Int64;
+  var AStream: TStream): TMP4FourCC;
+begin
+  if AStream.Position > (AStream.Size + 4) then
+    Raise Exception.Create('Buffer too small');
+
+  AStream.Read(Result, SizeOf(Result));
+  Result := SwapBytes32(Result);
+  BufPos := BufPos+4;
+end;
+
+function TAtomBaseData.ReadFourCCArray(var BufPos: Int64;
+  var AStream: TStream;  const ASize: Int32): TMP4FourCCArray;
+var
+  FCC: TMP4FourCC;
+  I, C: Int32;
+begin
+  if AStream.Position > (AStream.Size + 4) then
+    Raise Exception.Create('Buffer too small');
+
+  SetLength(Result, ASize);
+
+  C := 0;
+
+  for I := 0 to ASize - 1 do
+    begin
+      AStream.Read(FCC, SizeOf(TMP4FourCC));
+      if FCC <> 0 then
+        begin
+          Result[I] := FCC;
+          Inc(C);
+        end;
+    end;
+
+  SetLength(Result, C);
+
+  BufPos := BufPos + (ASize * SizeOf(TMP4FourCC));
+end;
+
 function TAtomBaseData.ReadMediaDateTime(var BufPos: Int64;
   var AStream: TStream): TDateTime;
 var
@@ -121,7 +193,7 @@ begin
     Raise Exception.Create('Buffer too small');
 
   AStream.Read(T, SizeOf(T));
-  Result := MediaTime(SwapBytes32(T));
+  Result := UIntToMediaTime(SwapBytes32(T));
   BufPos := BufPos+4;
 end;
 
@@ -171,19 +243,51 @@ begin
   BufPos := BufPos + ASize;
 end;
 
+{ TAtomAbstractData }
+
+constructor TAtomAbstractData.Create;
+begin
+  inherited;
+
+end;
+
+constructor TAtomAbstractData.CreateFromStream(var AStream: TStream;
+  const ASize: Int64);
+begin
+  Create;
+  PopulateFromStream(AStream, ASize);
+end;
+
+{ TAtomTinyData }
+
+constructor TAtomTinyData.Create;
+begin
+  inherited;
+
+end;
+
+procedure TAtomTinyData.PopulateFromStream(var AStream: TStream;
+  const ASize: Int64);
+var
+  BufPos: Int64;
+begin
+  BufPos := 0;
+
+  ReadFromStream(BufPos, AStream, ASize);
+  { Abstract Virtual method that fulls in descendant fields }
+
+  if BufPos <  ASize then
+    Raise Exception.Create('Data UnderRead for ' + ClassName);
+  if BufPos >  ASize then
+    Raise Exception.Create('Data OverRead for ' + ClassName);
+end;
+
 { TAtomFullData }
 
 constructor TAtomFullData.Create;
 begin
   inherited;
   FVersion := 0;
-end;
-
-constructor TAtomFullData.CreateFromStream(var AStream: TStream;
-  const ASize: Int64);
-begin
-  Create;
-  PopulateFromStream(AStream, ASize);
 end;
 
 procedure TAtomFullData.PopulateFromStream(var AStream: TStream; const ASize: Int64);
@@ -198,7 +302,7 @@ begin
 
   BufPos := 4;
 
-  ReadFromStream(BufPos, AStream);
+  ReadFromStream(BufPos, AStream, ASize);
   { Abstract Virtual method that fulls in descendant fields }
 
   if BufPos <  ASize then
@@ -207,10 +311,21 @@ begin
     Raise Exception.Create('Data OverRead for ' + ClassName);
 end;
 
+{ TAtomFtyp }
+
+procedure TAtomFtyp.ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64);
+begin
+  FMajorBrand := ReadFourCC(BufPos, AStream);
+  { 4 bytes - Major Brand }
+  FMinorBrand := ReadFourCC(BufPos, AStream);
+  { 4 bytes - Minor Brand }
+  FCompatibleBrands := ReadFourCCArray(BufPos, AStream, (BufSize - BufPos) div SizeOf(TMP4FourCC));
+end;
+
 { TAtomMvhd }
 
 procedure TAtomMvhd.ReadFromStream(var BufPos: Int64;
-  var AStream: TStream);
+  var AStream: TStream; const BufSize: Int64);
 begin
   FCreationTime := ReadMediaDateTime(BufPos, AStream);
   FModificationTime := ReadMediaDateTime(BufPos, AStream);

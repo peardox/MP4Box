@@ -3,7 +3,7 @@ program MP4CodeUtils;
 uses
   System.StartUpCopy,
   FMX.Forms,
-  UtilsMain in 'UtilsMain.pas' {Form2};
+  UtilsMain in 'src\UtilsMain.pas' {Form2};
 
 {$R *.res}
 
