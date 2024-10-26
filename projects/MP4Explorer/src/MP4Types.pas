@@ -1,5 +1,7 @@
 unit MP4Types;
 
+{$M+}
+
 interface
 
 uses
@@ -11,17 +13,45 @@ type
   TFourCCString = String[4];
   TBuffer = TBytes;
 
-  TMP4FourCC = Cardinal;
+  TMP4FourCC = type Cardinal;
   { A standard 4CC }
   TMP4Flags = Array[0..2] of Byte;
   TMP4Fixed32 = Int32;
   { Fixed point number 16:16 }
   TMP4Fixed16 = Int16;
   { Fixed point number 8:8 }
-  TMP4Matrix = Array[0..2, 0..2] of TMP4Fixed32;
+  TMP4Matrix3x3 = Array of TMP4Fixed32;
   { 3x3 Matrix }
-  TMP4FourCCArray = Array of Cardinal;
+  TMP4FourCCArray = Array of TMP4FourCC;
   { Array with redundant fields }
+
+  TMP4MetaData = class
+  strict private
+    FFourCC: TMP4FourCC;
+    FDataType:  UInt32;
+    FLocale: UInt32;
+    FData: TBytes;
+  public
+  published
+    property FourCC: TMP4FourCC read FFourCC write FFourCC;
+    property DataType: UInt32 read FDataType write FDataType;
+    property Locale: UInt32 read FLocale write FLocale;
+    property Data: TBytes read FData write FData;
+  end;
+  TMP4MetaDataList = TObjectList<TMP4MetaData>;
+
+  TMP4ChapterData = class
+  strict private
+    FTimestamp: UInt64;
+    FChapNameLen: Byte;
+    FChapName: TBytes;
+  public
+  published
+    property Timestamp: UInt64 read FTimestamp write FTimestamp;
+    property ChapNameLen: Byte read FChapNameLen write FChapNameLen;
+    property ChapName: TBytes read FChapName write FChapName;
+  end;
+  TMP4ChapterDataList = TObjectList<TMP4ChapterData>;
 
 const
   MediaZeroDayTime: UInt32 = 1462;
@@ -29,25 +59,14 @@ const
   SecondsInDay: UInt32 = 86400;
   { Need to calc dates... }
 
-function IsContainer(const AValue: TMP4FourCC): Boolean;
-function IsFullAtom(const AValue: TMP4FourCC): Boolean;
-function IsLeaf(const AValue: TMP4FourCC): Boolean;
-function IsKnownAtom(const AValue: TMP4FourCC): Boolean;
-function SwapBytes64(const aVal: Int64): Int64; inline;
+function SwapBytes64(const aVal: UInt64): UInt64; inline;
 function SwapBytes32(Value: UInt32): UInt32; inline;
 function SwapBytes16(Value: UInt16): UInt16; inline;
 function TFourCCToStr(a: TFourCC): String;
-function StringToFourCC(const AStr: String): TMP4FourCC;
 function FourCCToString(const AFourCC: TMP4FourCC): String;
+function IsValidFourCC(const AFourCC: TMP4FourCC): Boolean;
 
 implementation
-
-{ Temp really hacky bodges }
-const
-  ContainerAtoms: Array[0..8] of String = ('udta', 'mdia', 'edts', 'tref', 'trak', 'moov', 'ilst', 'minf', 'stbl');
-  LeafAtoms: Array[0..3] of String = ('mdat', 'mvhd', 'tkhd', 'elts');
-  FullAtoms: Array[0..0] of String = ('meta');
-  KnownAtoms: Array[0..1] of String = ('ftyp', 'mvhd');
 
 function MAKEFOURCC(ch0, ch1, ch2, ch3: AnsiChar): TMP4FourCC;
 begin
@@ -70,67 +89,7 @@ begin
   Result := MakeFourCC(AnsiChar(AStr[4]), AnsiChar(AStr[3]), AnsiChar(AStr[2]), AnsiChar(AStr[1]));
 end;
 
-function IsContainer(const AValue: TMP4FourCC): Boolean;
-var
-  I: Integer;
-begin
-  Result := False;
-  for I := 0 to Length(ContainerAtoms) - 1 do
-    begin
-      if StringToFourCC(ContainerAtoms[I]) = AValue then
-        begin
-          Result := True;
-          Break;
-        end;
-    end;
-end;
-
-function IsFullAtom(const AValue: TMP4FourCC): Boolean;
-var
-  I: Integer;
-begin
-  Result := False;
-  for I := 0 to Length(FullAtoms) - 1 do
-    begin
-      if StringToFourCC(FullAtoms[I]) = AValue then
-        begin
-          Result := True;
-          Break;
-        end;
-    end;
-end;
-
-function IsLeaf(const AValue: TMP4FourCC): Boolean;
-var
-  I: Integer;
-begin
-  Result := False;
-  for I := 0 to Length(LeafAtoms) - 1 do
-    begin
-      if StringToFourCC(LeafAtoms[I]) = AValue then
-        begin
-          Result := True;
-          Break;
-        end;
-    end;
-end;
-
-function IsKnownAtom(const AValue: TMP4FourCC): Boolean;
-var
-  I: Integer;
-begin
-  Result := False;
-  for I := 0 to Length(KnownAtoms) - 1 do
-    begin
-      if StringToFourCC(KnownAtoms[I]) = AValue then
-        begin
-          Result := True;
-          Break;
-        end;
-    end;
-end;
-
-function SwapBytes64(const aVal: Int64): Int64; inline;
+function SwapBytes64(const aVal: UInt64): UInt64; inline;
 begin
     Int64Rec(Result).Bytes[0] :=  Int64Rec(aVal).Bytes[7];
     Int64Rec(Result).Bytes[1] :=  Int64Rec(aVal).Bytes[6];
@@ -150,6 +109,20 @@ end;
 function SwapBytes16(Value: UInt16): UInt16; inline;
 begin
   Result := (Value SHR 8) OR (Value SHL 8);
+end;
+
+function IsValidFourCC(const AFourCC: TMP4FourCC): Boolean;
+  function IsValid(const AByte: Byte): Boolean;
+  begin
+    Result := False;
+    if (AByte >= $20) and (AByte <= $7E)then
+      Result := True;
+  end;
+begin
+  Result := IsValid(Byte((AFourCC and $FF000000) shr 24)) AND
+            IsValid(Byte((AFourCC and $00FF0000) shr 16)) AND
+            IsValid(Byte((AFourCC and $0000FF00) shr 8)) AND
+            IsValid(Byte(AFourCC and $000000FF));
 end;
 
 function TFourCCToStr(a: TFourCC): String;

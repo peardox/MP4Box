@@ -5,8 +5,8 @@ uses
   FMX.Forms,
   MP4Main in 'src\MP4Main.pas' {Form1},
   MP4Boxes in 'src\MP4Boxes.pas',
-  MP4KnownAtoms in 'src\MP4KnownAtoms.pas',
-  MP4Types in 'src\MP4Types.pas';
+  MP4Types in 'src\MP4Types.pas',
+  MP4Atoms in 'src\MP4Atoms.pas';
 
 {$R *.res}
 

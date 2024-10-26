@@ -6,7 +6,7 @@ uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs,
   FMX.Controls.Presentation, FMX.StdCtrls, FMX.Memo.Types, FMX.ScrollBox,
-  FMX.Memo, FMX.Layouts;
+  FMX.Memo, FMX.Layouts, FMX.Media;
 
 type
   TMP4FourCC = LongWord;
@@ -16,7 +16,11 @@ type
     Layout2: TLayout;
     Button1: TButton;
     Memo1: TMemo;
+    MediaPlayer1: TMediaPlayer;
+    Button2: TButton;
+    OpenDialog1: TOpenDialog;
     procedure Button1Click(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
   private
     { Private declarations }
   public
@@ -106,6 +110,15 @@ begin
       Memo1.Lines.Add(Atoms[I] + ' = $' + IntToHex(cc4, 4) + ' - ' + FourCCToString(cc4));
     end;
 
+end;
+
+procedure TForm2.Button2Click(Sender: TObject);
+begin
+  if OpenDialog1.Execute then
+    begin
+      MediaPlayer1.FileName := OpenDialog1.FileName;
+      MediaPlayer1.Play;
+    end;
 end;
 
 end.
