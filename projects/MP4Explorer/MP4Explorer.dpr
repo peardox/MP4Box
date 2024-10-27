@@ -6,7 +6,8 @@ uses
   MP4Main in 'src\MP4Main.pas' {Form1},
   MP4Boxes in 'src\MP4Boxes.pas',
   MP4Types in 'src\MP4Types.pas',
-  MP4Atoms in 'src\MP4Atoms.pas';
+  MP4Atoms in 'src\MP4Atoms.pas',
+  MP4DerivedAtoms in 'src\MP4DerivedAtoms.pas';
 
 {$R *.res}
 

@@ -41,6 +41,7 @@ uses
 {$IF defined(QUICKLOG) and defined(DEBUG)}
   Quick.Logger,
 {$ENDIF}
+  MP4DerivedAtoms,
   IOUtils;
 
 { TAtomList }
@@ -144,6 +145,8 @@ begin
             Atom := TAtomContainer.Create(AtomRec);
 
         { Data Atoms }
+        $746B6864: // tkhd
+            Atom := TAtomTkhd.Create(FStream, AtomRec);
         $6368706C: // chpl
             Atom := TAtomChpl.Create(FStream, AtomRec);
         $66747970: // ftyp

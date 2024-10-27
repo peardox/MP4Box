@@ -307,6 +307,7 @@
         <DCCReference Include="src\MP4Boxes.pas"/>
         <DCCReference Include="src\MP4Types.pas"/>
         <DCCReference Include="src\MP4Atoms.pas"/>
+        <DCCReference Include="src\MP4DerivedAtoms.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
@@ -394,12 +395,6 @@
                 <DeployFile LocalName="Win64\Debug\MP4Explorer.exe" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="Win64">
                         <RemoteName>MP4Explorer.exe</RemoteName>
-                        <Overwrite>true</Overwrite>
-                    </Platform>
-                </DeployFile>
-                <DeployFile LocalName="Win64\Debug\MP4Explorer.rsm" Configuration="Debug" Class="DebugSymbols">
-                    <Platform Name="Win64">
-                        <RemoteName>MP4Explorer.rsm</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>

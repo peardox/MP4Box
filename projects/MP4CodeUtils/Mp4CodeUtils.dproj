@@ -310,6 +310,7 @@
             <Form>Form2</Form>
             <FormType>fmx</FormType>
         </DCCReference>
+        <DCCReference Include="..\MP4Explorer\src\MP4Types.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
@@ -609,7 +610,7 @@
                 </DeployFile>
                 <DeployFile LocalName="Win32\Debug\MP4CodeUtils.exe" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="Win32">
-                        <RemoteName>MP4CodeUtils.exe</RemoteName>
+                        <RemoteName>Mp4CodeUtils.exe</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>

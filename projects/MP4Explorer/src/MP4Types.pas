@@ -65,6 +65,7 @@ function SwapBytes16(Value: UInt16): UInt16; inline;
 function TFourCCToStr(a: TFourCC): String;
 function FourCCToString(const AFourCC: TMP4FourCC): String;
 function IsValidFourCC(const AFourCC: TMP4FourCC): Boolean;
+function StringToFourCC(const AStr: String): TMP4FourCC;
 
 implementation
 
@@ -72,6 +73,7 @@ function MAKEFOURCC(ch0, ch1, ch2, ch3: AnsiChar): TMP4FourCC;
 begin
   Result := LongWord(Ord(ch0)) or (LongWord(Ord(ch1)) shl 8) or (LongWord(Ord(ch2)) shl 16) or (LongWord(Ord(ch3)) shl 24);
 end;
+
 
 function FourCCToString(const AFourCC: TMP4FourCC): String;
 begin
@@ -108,14 +110,14 @@ end;
 
 function SwapBytes16(Value: UInt16): UInt16; inline;
 begin
-  Result := (Value SHR 8) OR (Value SHL 8);
+  Result := ((Value and $FF00) SHR 8) OR ((Value and $00FF) SHL 8);
 end;
 
 function IsValidFourCC(const AFourCC: TMP4FourCC): Boolean;
   function IsValid(const AByte: Byte): Boolean;
   begin
     Result := False;
-    if (AByte >= $20) and (AByte <= $7E)then
+    if (AByte >= $20) and (AByte <= $7E) then
       Result := True;
   end;
 begin

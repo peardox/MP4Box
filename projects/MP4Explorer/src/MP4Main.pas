@@ -43,6 +43,7 @@ uses
     Quick.Logger,
     Quick.Logger.Provider.Files,
 {$ENDIF}
+  MP4DerivedAtoms,
   RTTI, TypInfo,
   IOUtils, MP4Types;
 
