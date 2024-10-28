@@ -108,7 +108,6 @@ var
   L: TMP4MetaDataList;
   I: TMP4MetaData;
 begin
-  Atom := Nil;
   L := Nil;
   if (Sender is TTreeViewItem) then
     begin

@@ -1,4 +1,4 @@
-unit MP4Atoms;
+﻿unit MP4Atoms;
 
 {$M+}
 
@@ -37,7 +37,7 @@ type
   protected
   public
     constructor Create; overload;
-    constructor Create(const ARec: TAtomRec); overload;
+    constructor Create(const ARec: TAtomRec); overload; virtual;
     constructor Create(const AAbsPos: Int64; const AFourCC: TMP4FourCC; const ASize: Int64; const AIs64Bit: Boolean; const ALevel: Integer; const AParent: TAtom); overload;
     property Parent: TAtom read FParent;
     property Is64Bit: Boolean read FIs64Bit;
@@ -71,56 +71,50 @@ type
     function ReadChapterDataList(var BufPos: Int64; var AStream: TStream; const ASize: Int32): TMP4ChapterDataList;
     function ReadReserved(var BufPos: Int64; var AStream: TStream; const ASize: Int32): TBytes;
     procedure ReadSkip(var BufPos: Int64; var AStream: TStream; const ASize: Int32);
+
   public
-    constructor Create(var AStream: TStream; const ARec: TAtomRec); overload;
-    procedure PopulateFromStream(var AStream: TStream; const ASize: Int64); virtual; abstract;
+    constructor Create(const ARec: TAtomRec); override;
+  end;
+
+  TAtomLite = class(TAtomAbstractData)
+  public
+    constructor Create(const ARec: TAtomRec); override;
+  end;
+
+  TAtomLiteData = class(TAtomLite)
+  strict private
+  public
+    constructor Create(var AStream: TStream; const ARec: TAtomRec); overload; virtual;
+    procedure PopulateFromStream(var AStream: TStream; const ASize: Int64);
     procedure ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64); virtual; abstract;
   end;
 
-  {
-  TAtomTiny = class(TAtomAbstractData)
-  public
-    constructor Create(var AStream: TStream; const ARec: TAtomRec); overload;
-  end;
-
-  TAtomFull = class(TAtomAbstractData)
-  public
-    constructor Create(var AStream: TStream; const ARec: TAtomRec); overload;
-  end;
-  }
-
-  TAtomTinyData = class(TAtomAbstractData)
-  strict
-  private
-  public
-    procedure PopulateFromStream(var AStream: TStream; const ASize: Int64); override;
-    procedure ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64); override;
-  end;
-
-  TAtomFullData = class(TAtomAbstractData)
-  strict
-  private
+  TAtomFull = class(TAtomLite)
+  strict private
     FVersion: Byte;
     { 1 byte - Version - Always 0 }
     FFlags: TMP4Flags;
     { 3 bytes - Flags - Always 0 }
   public
-    procedure PopulateFromStream(var AStream: TStream; const ASize: Int64); override;
+    constructor Create(var AStream: TStream; const ARec: TAtomRec); overload; virtual;
   end;
 
-  TAtomFree = class(TAtom);
-  TAtomSkip = class(TAtom);
-  TAtomWide = class(TAtom);
-
-  TAtomOpaqueData = class(TAtom);
-  TAtomContainer = class(TAtom);
-
-  TAtomMeta = class(TAtomFullData)
-  strict
-  private
+  TAtomFullData = class(TAtomFull)
+  strict private
   public
-    procedure ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64); override;
+    constructor Create(var AStream: TStream; const ARec: TAtomRec); override;
+    procedure PopulateFromStream(var AStream: TStream; const ASize: Int64);
+    procedure ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64); virtual; abstract;
   end;
+
+  TAtomFree = class(TAtomLite);
+  TAtomSkip = class(TAtomLite);
+  TAtomWide = class(TAtomLite);
+
+  TAtomOpaqueData = class(TAtomLite);
+  TAtomContainer = class(TAtomLite);
+
+  TAtomMeta = class(TAtomFull);
 
   TAtomChpl = class(TAtomFullData)
   strict
@@ -134,7 +128,7 @@ type
     property List: TMP4ChapterDataList read FList write FList;
   end;
 
-  TAtomIlst = class(TAtomTinyData)
+  TAtomIlst = class(TAtomLiteData)
   strict private
     FList: TMP4MetaDataList;
   public
@@ -144,7 +138,7 @@ type
 
 { *************************************************** }
 
-  TAtomFtyp = class(TAtomTinyData)
+  TAtomFtyp = class(TAtomLiteData)
   strict
   private
     { ftyp object }
@@ -261,19 +255,6 @@ begin
   Result := TDateTime(DateFloat);
 end;
 
-constructor TAtomAbstractData.Create(var AStream: TStream;
-  const ARec: TAtomRec);
-begin
-  Create(ARec);
-  IsHandled := True;
-  if ARec.Is64Bit then
-    PopulateFromStream(AStream, ARec.Size - SizeOf(TMP4FourCC) - SizeOf(UInt32) - SizeOf(Int64))
-    { PopulateStream needs size of atom - size of header }
-  else
-    PopulateFromStream(AStream, ARec.Size - SizeOf(TMP4FourCC) - SizeOf(UInt32));
-    { PopulateStream needs size of atom - size of header }
-end;
-
 function TAtomAbstractData.ReadFourCC(var BufPos: Int64;
   var AStream: TStream): TMP4FourCC;
 begin
@@ -370,6 +351,11 @@ begin
     Raise Exception.Create('MetaData OverRead for ' + ClassName + ' : Atom = ' + FourCCToString(FourCC));
 
   Result := AList;
+end;
+
+constructor TAtomAbstractData.Create(const ARec: TAtomRec);
+begin
+  inherited;
 end;
 
 function TAtomAbstractData.ReadByte(var BufPos: Int64;
@@ -472,8 +458,6 @@ begin
 end;
 
 function TAtomAbstractData.ReadReserved(var BufPos: Int64; var AStream: TStream; const ASize: Int32): TBytes;
-var
-  T: TBytes;
 begin
   if AStream.Position > (AStream.Size + ASize) then
     Raise Exception.Create('Buffer too small');
@@ -508,43 +492,72 @@ begin
   BufPos := BufPos + ASize;
 end;
 
-{ TAtomTinyData }
+{ TAtomLite }
 
-procedure TAtomTinyData.PopulateFromStream(var AStream: TStream;
-  const ASize: Int64);
+constructor TAtomLite.Create(const ARec: TAtomRec);
+begin
+  inherited;
+  IsHandled := True;
+end;
+
+{ TAtomLiteData }
+
+constructor TAtomLiteData.Create(var AStream: TStream; const ARec: TAtomRec);
+begin
+  inherited Create(ARec);
+  if ARec.Is64Bit then
+    PopulateFromStream(AStream, ARec.Size - SizeOf(TMP4FourCC) - SizeOf(UInt32) - SizeOf(Int64))
+    { PopulateStream needs size of atom - size of header }
+  else
+    PopulateFromStream(AStream, ARec.Size - SizeOf(TMP4FourCC) - SizeOf(UInt32));
+    { PopulateStream needs size of atom - size of header }
+end;
+
+procedure TAtomLiteData.PopulateFromStream(var AStream: TStream; const ASize: Int64);
 var
   BufPos: Int64;
 begin
   BufPos := 0;
 
   ReadFromStream(BufPos, AStream, ASize);
-  { Abstract Virtual method that fills in descendant fields }
+  { Abstract Virtual method that fulls in descendant fields }
 
   if BufPos <  ASize then
-    Raise Exception.Create('Data UnderRead for ' + ClassName + ' : Atom = ' + FourCCToString(FourCC));
+    Raise Exception.Create('Data UnderRead for ' + ClassName);
   if BufPos >  ASize then
-    Raise Exception.Create('Data OverRead for ' + ClassName + ' : Atom = ' + FourCCToString(FourCC));
+    Raise Exception.Create('Data OverRead for ' + ClassName);
 end;
 
-procedure TAtomTinyData.ReadFromStream(var BufPos: Int64; var AStream: TStream;
-  const BufSize: Int64);
-begin
-  { Do Nothing - A pure AtomTiny has no data - acts as a placeholder }
-  { free, skip and wide use this }
-end;
+{ TAtomFull }
 
-{ TAtomFullData }
-
-procedure TAtomFullData.PopulateFromStream(var AStream: TStream; const ASize: Int64);
-var
-  BufPos: Int64;
+constructor TAtomFull.Create(var AStream: TStream; const ARec: TAtomRec);
 begin
+  inherited Create(ARec);
+
   if AStream.Position > (AStream.Size + 4) then
     Raise Exception.Create('Buffer too small');
 
   AStream.Read(FVersion, SizeOf(FVersion));
   AStream.Read(FFlags, SizeOf(FFlags));
+end;
 
+{ TAtomFullData }
+
+constructor TAtomFullData.Create(var AStream: TStream; const ARec: TAtomRec);
+begin
+  inherited;
+  if ARec.Is64Bit then
+    PopulateFromStream(AStream, ARec.Size - SizeOf(TMP4FourCC) - SizeOf(UInt32) - SizeOf(Int64))
+    { PopulateStream needs size of atom - size of header }
+  else
+    PopulateFromStream(AStream, ARec.Size - SizeOf(TMP4FourCC) - SizeOf(UInt32));
+    { PopulateStream needs size of atom - size of header }
+end;
+
+procedure TAtomFullData.PopulateFromStream(var AStream: TStream; const ASize: Int64);
+var
+  BufPos: Int64;
+begin
   BufPos := 4;
 
   ReadFromStream(BufPos, AStream, ASize);
@@ -587,14 +600,6 @@ begin
   FSelectionDuration := ReadUInt32(BufPos, AStream);
   FCurrentTime := ReadUInt32(BufPos, AStream);
   FNextTrackID := ReadUInt32(BufPos, AStream);
-end;
-
-{ TAtomMeta }
-
-procedure TAtomMeta.ReadFromStream(var BufPos: Int64; var AStream: TStream;
-  const BufSize: Int64);
-begin
-  BufPos := BufSize;
 end;
 
 { TAtomIlst }

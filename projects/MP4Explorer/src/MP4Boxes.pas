@@ -147,8 +147,6 @@ begin
         { Data Atoms }
         $746B6864: // tkhd
             Atom := TAtomTkhd.Create(FStream, AtomRec);
-        $6368706C: // chpl
-            Atom := TAtomChpl.Create(FStream, AtomRec);
         $66747970: // ftyp
             Atom := TAtomFtyp.Create(FStream, AtomRec);
         $696C7374: // ilst
@@ -157,6 +155,8 @@ begin
             Atom := TAtomMeta.Create(FStream, AtomRec);
         $6D766864: // mvhd
             Atom := TAtomMvhd.Create(FStream, AtomRec);
+        $6368706C: // chpl
+            Atom := TAtomChpl.Create(FStream, AtomRec);
       else
         Atom := TAtom.Create(AtomRec);
         FUnhandledList.Add(Atom.FourCC);
