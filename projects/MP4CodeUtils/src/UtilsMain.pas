@@ -25,7 +25,7 @@ type
     procedure MakeMP4AtomClass(var TypeDefs: String; var CodeDefs: String; const AFilename: String);
     function CreateDataCode(const AVarName: String; const AVarType: String): String;
     function GetSkipSize(const AVarType: String): String;
-    procedure MakeMP4AtomWrapper(const AFilename: String);
+    procedure MakeMP4AtomWrapper(const AFilepath: String);
     { Private declarations }
   public
     { Public declarations }
@@ -39,7 +39,7 @@ implementation
 {$R *.fmx}
 uses MP4Types, IOUtils;
 
-procedure TForm2.MakeMP4AtomWrapper(const AFilename: String);
+procedure TForm2.MakeMP4AtomWrapper(const AFilepath: String);
 var
   StartOfFile, TypeDefs, ImpDef, CodeDefs, EndOfFile: String;
 begin
@@ -58,9 +58,13 @@ begin
   TypeDefs := '';
   ImpDef := 'implementation' + SLineBreak;
   CodeDefs := '';
-  EndOfFile := SLineBreak + 'end.' + SLineBreak;
+  EndOfFile := 'end.' + SLineBreak;
 
-  MakeMP4AtomClass(TypeDefs, CodeDefs, AFilename);
+//  MakeMP4AtomClass(TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'ftyp.def'));
+//  MakeMP4AtomClass(TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'mvhd.def'));
+  MakeMP4AtomClass(TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'tkhd.def'));
+//  MakeMP4AtomClass(TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'ilst.def'));
+//  MakeMP4AtomClass(TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'chpl.def'));
 
   Memo1.Lines.Add(StartOfFile);
   Memo1.Lines.Add(TypeDefs);
@@ -97,9 +101,13 @@ begin
               '  strict private' + SLineBreak;
 
 
+
   for I := 1 to Triplets - 1 do
     begin
-      TypeDefs := TypeDefs + '    F' + SLines[(I * 3)] + ': ' + SLines[(I * 3) + 1] + ';' + SLineBreak;
+      if not(SLines[(I * 3)].StartsWith('Reserved')) then
+        TypeDefs := TypeDefs + '    F' + SLines[(I * 3)] + ': ' + SLines[(I * 3) + 1] + ';' + SLineBreak
+      else
+        TypeDefs := TypeDefs + '    F' + SLines[(I * 3)] + ': TBytes;' + SLineBreak;
       TypeDefs := TypeDefs + '    ' + SLines[(I * 3) + 2] + SLineBreak;
     end;
 
@@ -114,7 +122,7 @@ begin
                   ' read F' + SLines[(I * 3)] + ' write F' + SLines[(I * 3)] +
                   ';' + SLineBreak;
     end;
-  TypeDefs := TypeDefs + '  end;' + SLineBreak;
+  TypeDefs := TypeDefs + '  end;' + SLineBreak + SLineBreak;
 
   CodeDefs := CodeDefs + '{ ' + SLines[0] + ' }' + SLineBreak + SLineBreak;
   CodeDefs := CodeDefs + 'procedure ' + SLines[0] + '.ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64);' + SLineBreak;
@@ -122,13 +130,15 @@ begin
 
   for I := 1 to Triplets - 1 do
     begin
+    {
       if SLines[(I * 3)].StartsWith('Reserved') then
         CodeDefs := CodeDefs + '  ' + CreateDataCode(SLines[(I * 3)], SLines[(I * 3) + 1]) + ';' + SLineBreak
       else
+    }
         CodeDefs := CodeDefs + '  F' + SLines[(I * 3)] + ' := ' + CreateDataCode(SLines[(I * 3)], SLines[(I * 3) + 1]) + ';' + SLineBreak;
     end;
 
-  CodeDefs := CodeDefs + 'end;' + SLineBreak;
+  CodeDefs := CodeDefs + 'end;' + SLineBreak + SLineBreak;
 end;
 
 procedure TForm2.Button1Click(Sender: TObject);
@@ -136,7 +146,7 @@ var
   FPath: String;
 begin
   FPath := 'C:\git\MkMp4Obj\def';
-  MakeMP4AtomWrapper(TPath.Combine(IncludeTrailingPathDelimiter(FPath), 'tkhd.def'));
+  MakeMP4AtomWrapper(FPath);
 {
   if OpenDialog1.Execute then
     begin
@@ -160,10 +170,10 @@ begin
     begin
       if AVarType.StartsWith('Array[0..') then
         begin
-          Result := 'ReadSkip(BufPos, AStream, ' + GetSkipSize(AVarType) + ')';
+          Result := 'ReadReserved(BufPos, AStream, ' + GetSkipSize(AVarType) + ')';
         end
       else
-        Raise Exception.Create('Readskip parse error');
+        Raise Exception.Create('ReadReserved parse error');
     end
   else if AVarType = 'TDateTime' then
     Result := 'ReadMediaDateTime(BufPos, AStream)'
@@ -187,9 +197,12 @@ begin
     Result := 'ReadMatrix3x3(BufPos, AStream)'
   else if AVarType = 'TMP4FourCC' then
     Result := 'ReadFourCC(BufPos, AStream)'
-  else if AVarType = 'TMP4ChapterData' then
+  else if AVarType = 'TMP4FourCCArray' then
+    Result := 'ReadFourCCArray(BufPos, AStream)'
+
+  else if AVarType = 'TMP4ChapterDataList' then
     Result := 'ReadChapterDataList(BufPos, AStream, BufSize)'
-  else if AVarType = 'TMP4MetaData' then
+  else if AVarType = 'TMP4MetaDataList' then
     Result := 'ReadMetaDataList(BufPos, AStream, BufSize)'
 
   else if AVarType = 'TCString' then

@@ -18,11 +18,11 @@ type
     { 4 bytes - Modification Time }
     FTrackID: UInt32;
     { 4 bytes - Track ID }
-    FReserved1: Array[0..3] of Byte;
+    FReserved1: TBytes;
     { 4 bytes - Reserved For Apple - Skipped completely }
     FDuration: UInt32;
     { 4 bytes - Duration }
-    FReserved2: Array[0..7] of Byte;
+    FReserved2: TBytes;
     { 8 bytes - Reserved For Apple - Skipped completely }
     FLayer: UInt16;
     { 2 bytes - Layer }
@@ -30,7 +30,7 @@ type
     { 2 bytes - Alternate Group }
     FVolume: TMP4Fixed16;
     { 2 bytes - Volume }
-    FReserved3: Array[0..1] of Byte;
+    FReserved3: TBytes;
     { 2 bytes - Reserved For Apple - Skipped completely }
     FMatrixStructure: TMP4Matrix3x3;
     { 36 bytes - Matrix Structure  - TMP4Fixed32 3x3 Matrix }
@@ -53,6 +53,7 @@ type
     property TrackHeight: TMP4Fixed32 read FTrackHeight write FTrackHeight;
   end;
 
+
 implementation
 
 { TAtomTkhd }
@@ -62,13 +63,13 @@ begin
   FCreationTime := ReadMediaDateTime(BufPos, AStream);
   FModificationTime := ReadMediaDateTime(BufPos, AStream);
   FTrackID := ReadUInt32(BufPos, AStream);
-  ReadSkip(BufPos, AStream, 4);
+  FReserved1 := ReadReserved(BufPos, AStream, 4);
   FDuration := ReadUInt32(BufPos, AStream);
-  ReadSkip(BufPos, AStream, 8);
+  FReserved2 := ReadReserved(BufPos, AStream, 8);
   FLayer := ReadUInt16(BufPos, AStream);
   FAlternateGroup := ReadUInt16(BufPos, AStream);
   FVolume := ReadUInt16(BufPos, AStream);
-  ReadSkip(BufPos, AStream, 2);
+  FReserved3 := ReadReserved(BufPos, AStream, 2);
   FMatrixStructure := ReadMatrix3x3(BufPos, AStream);
   FTrackWidth := ReadUInt32(BufPos, AStream);
   FTrackHeight := ReadUInt32(BufPos, AStream);

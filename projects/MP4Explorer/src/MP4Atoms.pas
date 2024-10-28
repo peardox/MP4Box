@@ -69,6 +69,7 @@ type
     function ReadMetaDataList(var BufPos: Int64; var AStream: TStream; const ASize: Int32): TMP4MetaDataList;
     function ReadChapterData(var BufPos: Int64; var AStream: TStream): TMP4ChapterData;
     function ReadChapterDataList(var BufPos: Int64; var AStream: TStream; const ASize: Int32): TMP4ChapterDataList;
+    function ReadReserved(var BufPos: Int64; var AStream: TStream; const ASize: Int32): TBytes;
     procedure ReadSkip(var BufPos: Int64; var AStream: TStream; const ASize: Int32);
   public
     constructor Create(var AStream: TStream; const ARec: TAtomRec); overload;
@@ -468,6 +469,18 @@ begin
 
   AStream.Read(Result, SizeOf(Result));
   BufPos := BufPos+4;
+end;
+
+function TAtomAbstractData.ReadReserved(var BufPos: Int64; var AStream: TStream; const ASize: Int32): TBytes;
+var
+  T: TBytes;
+begin
+  if AStream.Position > (AStream.Size + ASize) then
+    Raise Exception.Create('Buffer too small');
+
+  SetLength(Result, ASize);
+  AStream.Read(Result, ASize);
+  BufPos := BufPos + ASize;
 end;
 
 procedure TAtomAbstractData.ReadSkip(var BufPos: Int64; var AStream: TStream;
