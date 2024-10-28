@@ -6,7 +6,9 @@ interface
 
 uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
-  Generics.Defaults, Generics.Collections, MP4Atoms, MP4Types;
+  Generics.Defaults, Generics.Collections,
+  MP4AutoAtom,
+  MP4Atoms, MP4Types;
 
 type
   TMp4Box = packed record
@@ -110,60 +112,12 @@ begin
       else
         AtomRec.Is64Bit := False;
 
-{$IF defined(QUICKLOG) and defined(DEBUG)}
-//    Log('"' + FourCCToString(AtomRec.FourCC) + '", ' + IntToStr(FPos), etInfo);
-{$ENDIF}
-      case AtomRec.FourCC of
-        { Binary Blob Atom }
-        $6D646174: // mdat
-            Atom := TAtomOpaqueData.Create(AtomRec);
 
-        { Empty Atoms }
-        $66726565: // free
-            Atom := TAtomFree.Create(AtomRec);
-        $736B6970: // skip
-            Atom := TAtomSkip.Create(AtomRec);
-        $77696465: // wide
-            Atom := TAtomWide.Create(AtomRec);
-
-        { Container Atoms }
-        $65647473: // edts
-            Atom := TAtomContainer.Create(AtomRec);
-        $6D646961: // mdia
-            Atom := TAtomContainer.Create(AtomRec);
-        $6D696E66: // minf
-            Atom := TAtomContainer.Create(AtomRec);
-        $6D6F6F76: // moov
-            Atom := TAtomContainer.Create(AtomRec);
-        $7374626C: // stbl
-            Atom := TAtomContainer.Create(AtomRec);
-        $7472616B: // trak
-            Atom := TAtomContainer.Create(AtomRec);
-        $74726566: // tref
-            Atom := TAtomContainer.Create(AtomRec);
-        $75647461: // udta
-            Atom := TAtomContainer.Create(AtomRec);
-
-        { Data Atoms }
-        $746B6864: // tkhd
-            Atom := TAtomTkhd.Create(FStream, AtomRec);
-        $66747970: // ftyp
-            Atom := TAtomFtyp.Create(FStream, AtomRec);
-        $696C7374: // ilst
-            Atom := TAtomIlst.Create(FStream, AtomRec);
-        $6D657461: // meta
-            Atom := TAtomMeta.Create(FStream, AtomRec);
-        $6D766864: // mvhd
-            Atom := TAtomMvhd.Create(FStream, AtomRec);
-        $6368706C: // chpl
-            Atom := TAtomChpl.Create(FStream, AtomRec);
-        $63686170: // chap
-            Atom := TAtomChap.Create(FStream, AtomRec);
-        $656C7374: // elst
-            Atom := TAtomElst.Create(FStream, AtomRec);
-      else
-        Atom := TAtom.Create(AtomRec);
-        FUnhandledList.Add(Atom.FourCC);
+      Atom := CreateAutoAtom(FStream, AtomRec);
+      if Atom = Nil then
+        begin
+          Atom := TAtom.Create(AtomRec);
+          FUnhandledList.Add(Atom.FourCC);
       end;
 
 {$IF defined(QUICKLOG) and defined(DEBUG)}

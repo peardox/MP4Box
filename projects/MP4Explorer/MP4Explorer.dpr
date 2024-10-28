@@ -7,7 +7,8 @@ uses
   MP4Boxes in 'src\MP4Boxes.pas',
   MP4Types in 'src\MP4Types.pas',
   MP4Atoms in 'src\MP4Atoms.pas',
-  MP4DerivedAtoms in 'src\MP4DerivedAtoms.pas';
+  MP4DerivedAtoms in 'src\MP4DerivedAtoms.pas',
+  MP4AutoAtom in 'src\MP4AutoAtom.pas';
 
 {$R *.res}
 

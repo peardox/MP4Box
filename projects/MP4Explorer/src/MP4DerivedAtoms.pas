@@ -8,8 +8,7 @@ uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   Generics.Defaults, Generics.Collections, MP4Atoms, MP4Types;
 
-type
-  TAtomFtyp = class(TAtomLiteData) { $66747970: // ftyp }
+type  TAtomFtyp = class(TAtomLiteData) { $66747970: // ftyp }
   { File type compatibility atom - An atom that identifies the file type specifications with which the file is compatible. }
   strict private
     FMajorBrand: TMP4FourCC;
@@ -174,9 +173,7 @@ type
     property List: TMP4EditDataList read FList write FList;
   end;
 
-
 implementation
-
 { TAtomFtyp }
 
 procedure TAtomFtyp.ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64);
@@ -257,6 +254,4 @@ begin
   FList := ReadEditDataList(BufPos, AStream, BufSize);
 end;
 
-
 end.
-
