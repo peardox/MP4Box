@@ -65,9 +65,10 @@ type
     function ReadUInt16(var BufPos: Int64; var AStream: TStream): UInt16;
     function ReadByte(var BufPos: Int64; var AStream: TStream): Byte;
     function ReadTBytes(var BufPos: Int64; var AStream: TStream; const ASize: Int32): TBytes;
+    function ReadMetaData(var BufPos: Int64; var AStream: TStream): TMP4MetaData;
     function ReadMetaDataList(var BufPos: Int64; var AStream: TStream; const ASize: Int32): TMP4MetaDataList;
+    function ReadChapterData(var BufPos: Int64; var AStream: TStream): TMP4ChapterData;
     function ReadChapterDataList(var BufPos: Int64; var AStream: TStream; const ASize: Int32): TMP4ChapterDataList;
-    function ReadEditDataList(var BufPos: Int64; var AStream: TStream; const ASize: Int32): TMP4EditDataList;
     function ReadReserved(var BufPos: Int64; var AStream: TStream; const ASize: Int32): TBytes;
     procedure ReadSkip(var BufPos: Int64; var AStream: TStream; const ASize: Int32);
 
@@ -109,9 +110,105 @@ type
   TAtomFree = class(TAtomLite);
   TAtomSkip = class(TAtomLite);
   TAtomWide = class(TAtomLite);
+
   TAtomOpaqueData = class(TAtomLite);
   TAtomContainer = class(TAtomLite);
+
   TAtomMeta = class(TAtomFull);
+
+  TAtomChpl = class(TAtomFullData)
+  strict
+  private
+    FChapterCount: Byte;
+    FList: TMP4ChapterDataList;
+  public
+    procedure ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64); override;
+  published
+    property ChapterCount: Byte read FChapterCount write FChapterCount;
+    property List: TMP4ChapterDataList read FList write FList;
+  end;
+
+  TAtomIlst = class(TAtomLiteData)
+  strict private
+    FList: TMP4MetaDataList;
+  public
+    procedure ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64); override;
+    property List: TMP4MetaDataList read FList write FList;
+  end;
+
+{ *************************************************** }
+
+  TAtomFtyp = class(TAtomLiteData)
+  strict
+  private
+    { ftyp object }
+    FMajorBrand: TMP4FourCC;
+    { 4 bytes - Major Brand }
+    FMinorBrand: UInt32;
+    { 4 bytes - Minor Brand }
+    FCompatibleBrands: TMP4FourCCArray;
+    { X bytes - Compatible Brands - Varable array of types }
+  public
+    procedure ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64); override;
+  published
+    property MajorBrand: TMP4FourCC read FMajorBrand write FMajorBrand;
+    { 4 bytes - Major Brand }
+    property MinorBrand: UInt32 read FMinorBrand write FMinorBrand;
+    { 4 bytes - Minor Brand }
+    property CompatibleBrands: TMP4FourCCArray read FCompatibleBrands write FCompatibleBrands;
+  end;
+
+  TAtomMvhd = class(TAtomFullData)
+  strict private
+    FCreationTime: TDateTime;
+    { 4 bytes - Creation Time }
+    FModificationTime: TDateTime;
+    { 4 bytes - Modification Time }
+    FTimeScale: UInt32;
+    { 4 bytes - TimeScale - units per second }
+    FDuration: UInt32;
+    { 4 bytes - Actual Duration - FDuration * (1/FTimeScale) Seconds }
+    FPreferredRate: TMP4Fixed32;
+    { 4 bytes - Preferred Rate - 1.0 = Normal }
+    FPreferredVolume: TMP4Fixed16;
+    { 2 bytes - Preferred Volume - 1.0 = Normal }
+    {$HINTS OFF}
+    FReserved: Array[0..9] of Byte;
+    { 10 bytes - Reserved For Apple - Skipped completely }
+    {$HINTS ON}
+    FMatrixStructure: TMP4Matrix3x3;
+    { 36 bytes - Matrix Structure - TMP4Fixed32 3x3 Matrix }
+    FPreviewTime: UInt32;
+    { 4 bytes - Preview time - in TimeScale units }
+    FPreviewDurartion: UInt32;
+    { 4 bytes - Preview duration - in TimeScale units }
+    FPosterTime: UInt32;
+    { 4 bytes - Poster Time - in TimeScale units }
+    FSelectionTime: UInt32;
+    { 4 bytes - Selection Time - in TimeScale units}
+    FSelectionDuration: UInt32;
+    { 4 bytes - Selection Duration - in TimeScale units}
+    FCurrentTime: UInt32;
+    { 4 bytes - Current Time - within movie }
+    FNextTrackID: UInt32;
+    { 4 bytes - Next Track ID }
+  public
+    procedure ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64); override;
+  published
+    property CreationTime: TDateTime read FCreationTime write FCreationTime;
+    property ModificationTime: TDateTime read FModificationTime write FModificationTime;
+    property TimeScale: UInt32 read FTimeScale write FTimeScale;
+    property Duration: UInt32 read FDuration write FDuration;
+    property PreferredRate: TMP4Fixed32 read FPreferredRate write FPreferredRate;
+    property PreferredVolume: TMP4Fixed16 read FPreferredVolume write FPreferredVolume;
+    property MatrixStructure: TMP4Matrix3x3 read FMatrixStructure write FMatrixStructure;
+    property PreviewTime: UInt32 read FPreviewTime write FPreviewTime;
+    property PreviewDurartion: UInt32 read FPreviewDurartion write FPreviewDurartion;
+    property PosterTime: UInt32 read FPosterTime write FPosterTime;
+    property SelectionTime: UInt32 read FSelectionTime write FSelectionTime;
+    property CurrentTime: UInt32 read FCurrentTime write FCurrentTime;
+    property NextTrackID: UInt32 read FNextTrackID write FNextTrackID;
+  end;
 
 implementation
 
@@ -210,35 +307,35 @@ begin
   BufPos := BufPos+4;
 end;
 
+function TAtomAbstractData.ReadMetaData(var BufPos: Int64;
+  var AStream: TStream): TMP4MetaData;
+var
+  AItem: TMP4MetaData;
+//  MetaSize: UInt32;
+  DataFCC: TMP4FourCC;
+  DataSize: UInt32;
+begin
+  AItem := TMP4MetaData.Create;
+//  DataSize := ReadUInt32(BufPos, AStream);
+  ReadSkip(BufPos, AStream, 4);
+  { Just wanna skip this one }
+  AItem.FourCC := ReadFourCC(BufPos, AStream);
+  DataSize := ReadUInt32(BufPos, AStream);
+  DataFCC := ReadFourCC(BufPos, AStream);
+  if DataFCC = $64617461 { 'data' } then
+    begin
+      AItem.DataType := ReadUInt32(BufPos, AStream);
+      AItem.Locale := ReadUInt32(BufPos, AStream);
+      AItem.Data := ReadTBytes(BufPos, AStream, DataSize - 16);
+    end
+  else
+    Raise Exception.Create('Metadata "data" atom not found');
+
+  Result := AItem;
+end;
+
 function TAtomAbstractData.ReadMetaDataList(var BufPos: Int64;
   var AStream: TStream; const ASize: Int32): TMP4MetaDataList;
-
-  function ReadMetaData(var BufPos: Int64; var AStream: TStream): TMP4MetaData;
-  var
-    AItem: TMP4MetaData;
-  //  MetaSize: UInt32;
-    DataFCC: TMP4FourCC;
-    DataSize: UInt32;
-  begin
-    AItem := TMP4MetaData.Create;
-  //  DataSize := ReadUInt32(BufPos, AStream);
-    ReadSkip(BufPos, AStream, 4);
-    { Just wanna skip this one }
-    AItem.FourCC := ReadFourCC(BufPos, AStream);
-    DataSize := ReadUInt32(BufPos, AStream);
-    DataFCC := ReadFourCC(BufPos, AStream);
-    if DataFCC = $64617461 { 'data' } then
-      begin
-        AItem.DataType := ReadUInt32(BufPos, AStream);
-        AItem.Locale := ReadUInt32(BufPos, AStream);
-        AItem.Data := ReadTBytes(BufPos, AStream, DataSize - 16);
-      end
-    else
-      Raise Exception.Create('Metadata "data" atom not found');
-
-    Result := AItem;
-  end;
-
 var
   AItem: TMP4MetaData;
   AList: TMP4MetaDataList;
@@ -271,21 +368,21 @@ begin
   BufPos := BufPos+SizeOf(Byte);
 end;
 
+function TAtomAbstractData.ReadChapterData(var BufPos: Int64;
+  var AStream: TStream): TMP4ChapterData;
+var
+  AItem: TMP4ChapterData;
+begin
+  AItem := TMP4ChapterData.Create;
+  AItem.Timestamp := ReadUInt64(BufPos, AStream);
+  AItem.ChapNameLen := ReadByte(BufPos, AStream);
+  AItem.ChapName := ReadTBytes(BufPos, AStream, AItem.ChapNameLen);
+
+  Result := AItem;
+end;
+
 function TAtomAbstractData.ReadChapterDataList(var BufPos: Int64;
   var AStream: TStream; const ASize: Int32): TMP4ChapterDataList;
-
-  function ReadChapterData(var BufPos: Int64; var AStream: TStream): TMP4ChapterData;
-  var
-    AItem: TMP4ChapterData;
-  begin
-    AItem := TMP4ChapterData.Create;
-    AItem.Timestamp := ReadUInt64(BufPos, AStream);
-    AItem.ChapNameLen := ReadByte(BufPos, AStream);
-    AItem.ChapName := ReadTBytes(BufPos, AStream, AItem.ChapNameLen);
-
-    Result := AItem;
-  end;
-
 var
   AItem: TMP4ChapterData;
   AList: TMP4ChapterDataList;
@@ -294,38 +391,6 @@ begin
   while BufPos < ASize do
     begin
       AItem := ReadChapterData(BufPos, AStream);
-      if AItem <> Nil then
-        AList.Add(AItem);
-    end;
-  if BufPos > ASize then
-    Raise Exception.Create('MetaData OverRead for ' + ClassName + ' : Atom = ' + FourCCToString(FourCC));
-
-  Result := AList;
-end;
-
-function TAtomAbstractData.ReadEditDataList(var BufPos: Int64;
-  var AStream: TStream; const ASize: Int32): TMP4EditDataList;
-
-  function ReadEditData(var BufPos: Int64; var AStream: TStream): TMP4EditData;
-  var
-    AItem: TMP4EditData;
-  begin
-    AItem := TMP4EditData.Create;
-    AItem.TrackDuration := ReadUInt32(BufPos, AStream);
-    AItem.MediaTime := ReadUInt32(BufPos, AStream);
-    AItem.MediaRate := ReadUInt32(BufPos, AStream);
-
-    Result := AItem;
-  end;
-
-var
-  AItem: TMP4EditData;
-  AList: TMP4EditDataList;
-begin
-  AList := TMP4EditDataList.Create(True);
-  while BufPos < ASize do
-    begin
-      AItem := ReadEditData(BufPos, AStream);
       if AItem <> Nil then
         AList.Add(AItem);
     end;
@@ -502,6 +567,59 @@ begin
     Raise Exception.Create('Data UnderRead for ' + ClassName);
   if BufPos >  ASize then
     Raise Exception.Create('Data OverRead for ' + ClassName);
+end;
+
+{ TAtomFtyp }
+
+procedure TAtomFtyp.ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64);
+begin
+  FMajorBrand := ReadFourCC(BufPos, AStream);
+  { 4 bytes - Major Brand }
+  FMinorBrand := ReadUInt32(BufPos, AStream);
+  { 4 bytes - Minor Brand }
+  FCompatibleBrands := ReadFourCCArray(BufPos, AStream, (BufSize - BufPos) div SizeOf(TMP4FourCC));
+end;
+
+{ TAtomMvhd }
+
+procedure TAtomMvhd.ReadFromStream(var BufPos: Int64;
+  var AStream: TStream; const BufSize: Int64);
+begin
+  FCreationTime := ReadMediaDateTime(BufPos, AStream);
+  FModificationTime := ReadMediaDateTime(BufPos, AStream);
+  FTimeScale := ReadUInt32(BufPos, AStream);
+  FDuration := ReadUInt32(BufPos, AStream);
+  FPreferredRate := ReadUInt32(BufPos, AStream);
+  FPreferredVolume := ReadUInt16(BufPos, AStream);
+  ReadSkip(BufPos, AStream, 10);
+  FMatrixStructure := ReadMatrix3x3(BufPos, AStream);
+  FPreviewTime := ReadUInt32(BufPos, AStream);
+  FPreviewDurartion := ReadUInt32(BufPos, AStream);
+  FPosterTime := ReadUInt32(BufPos, AStream);
+  FSelectionTime := ReadUInt32(BufPos, AStream);
+  FSelectionDuration := ReadUInt32(BufPos, AStream);
+  FCurrentTime := ReadUInt32(BufPos, AStream);
+  FNextTrackID := ReadUInt32(BufPos, AStream);
+end;
+
+{ TAtomIlst }
+
+procedure TAtomIlst.ReadFromStream(var BufPos: Int64; var AStream: TStream;
+  const BufSize: Int64);
+begin
+  // inherited;
+  FList := ReadMetaDataList(BufPos, AStream, BufSize);
+
+end;
+
+{ TAtomChpl }
+
+procedure TAtomChpl.ReadFromStream(var BufPos: Int64; var AStream: TStream;
+  const BufSize: Int64);
+begin
+  ReadSkip(BufPos, AStream, 4);
+  FChapterCount := ReadByte(BufPos, AStream);
+  FList := ReadChapterDataList(BufPos, AStream, BufSize);
 end;
 
 end.

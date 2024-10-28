@@ -157,6 +157,10 @@ begin
             Atom := TAtomMvhd.Create(FStream, AtomRec);
         $6368706C: // chpl
             Atom := TAtomChpl.Create(FStream, AtomRec);
+        $63686170: // chap
+            Atom := TAtomChap.Create(FStream, AtomRec);
+        $656C7374: // elst
+            Atom := TAtomElst.Create(FStream, AtomRec);
       else
         Atom := TAtom.Create(AtomRec);
         FUnhandledList.Add(Atom.FourCC);

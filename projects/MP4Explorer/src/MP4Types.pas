@@ -53,6 +53,19 @@ type
   end;
   TMP4ChapterDataList = TObjectList<TMP4ChapterData>;
 
+  TMP4EditData = class
+  strict private
+    FTrackDuration: UInt32;
+    FMediaTime: UInt32;
+    FMediaRate: TMP4Fixed32;
+  public
+  published
+    property TrackDuration: UInt32 read FTrackDuration write FTrackDuration;
+    property MediaTime: UInt32 read FMediaTime write FMediaTime;
+    property MediaRate: TMP4Fixed32 read FMediaRate write FMediaRate;
+  end;
+  TMP4EditDataList = TObjectList<TMP4EditData>;
+
 const
   MediaZeroDayTime: UInt32 = 1462;
   { Midnight 1st Jan 1904 for MP4 is 0 so adjust fot TDateTime }

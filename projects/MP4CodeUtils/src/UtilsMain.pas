@@ -22,10 +22,11 @@ type
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
   private
-    procedure MakeMP4AtomClass(var TypeDefs: String; var CodeDefs: String; const AFilename: String);
+    procedure MakeMP4AtomClass(var IncDefs: String; var TypeDefs: String; var CodeDefs: String; const AFilename: String);
     function CreateDataCode(const AVarName: String; const AVarType: String): String;
     function GetSkipSize(const AVarType: String): String;
     procedure MakeMP4AtomWrapper(const AFilepath: String);
+    procedure OutputData(const ACode, AInc: String);
     { Private declarations }
   public
     { Public declarations }
@@ -41,7 +42,9 @@ uses MP4Types, IOUtils;
 
 procedure TForm2.MakeMP4AtomWrapper(const AFilepath: String);
 var
-  StartOfFile, TypeDefs, ImpDef, CodeDefs, EndOfFile: String;
+  IncDefs, StartOfFile, TypeDefs, ImpDef, CodeDefs, EndOfFile: String;
+  FinalCode: String;
+  FinalInc: String;
 begin
   StartOfFile :=  'unit MP4DerivedAtoms;' + SLineBreak +
                   '' + SLineBreak +
@@ -55,25 +58,42 @@ begin
                   '' + SLineBreak +
                   'type';
 
+  IncDefs := '';
   TypeDefs := '';
   ImpDef := 'implementation' + SLineBreak;
   CodeDefs := '';
   EndOfFile := 'end.' + SLineBreak;
 
-//  MakeMP4AtomClass(TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'ftyp.def'));
-//  MakeMP4AtomClass(TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'mvhd.def'));
-  MakeMP4AtomClass(TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'tkhd.def'));
-//  MakeMP4AtomClass(TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'ilst.def'));
-//  MakeMP4AtomClass(TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'chpl.def'));
+  MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'ftyp.def'));
+  MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'mvhd.def'));
+  MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'tkhd.def'));
+  MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'ilst.def'));
+  MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'chpl.def'));
+  MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'chap.def'));
+  MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'elst.def'));
 
-  Memo1.Lines.Add(StartOfFile);
-  Memo1.Lines.Add(TypeDefs);
-  Memo1.Lines.Add(ImpDef);
-  Memo1.Lines.Add(CodeDefs);
-  Memo1.Lines.Add(EndOfFile);
+  FinalCode := StartOfFile + TypeDefs + ImpDef + CodeDefs + EndOfFile;
+  FinalInc := IncDefs;
+
+  OutputData(FinalCode, FinalInc);
+
 end;
 
-procedure TForm2.MakeMP4AtomClass(var TypeDefs: String; var CodeDefs: String; const AFilename: String);
+procedure TForm2.OutputData(const ACode: String; const AInc: String);
+var
+  CheckPath: String;
+begin
+  CheckPath := '../../../MP4Explorer/src/';
+  if FileExists(CheckPath + 'MP4Boxes.pas') then
+    begin
+      Memo1.Lines.Add(AInc);
+      TFile.WriteAllText(CheckPath + 'MP4DerivedAtoms.inc', AInc);
+      Memo1.Lines.Add(ACode);
+      TFile.WriteAllText(CheckPath + 'MP4DerivedAtoms.pas', ACode);
+    end;
+end;
+
+procedure TForm2.MakeMP4AtomClass(var IncDefs: String; var TypeDefs: String; var CodeDefs: String; const AFilename: String);
 var
   cc4: TMP4FourCC;
   SAtom: String;
@@ -95,6 +115,9 @@ begin
   Triplets := Length(SLines) div 3;
   if Length(SLines) <> (Triplets * 3) then
     Raise Exception.Create('Lines in ' + AFilename + ' not divisible by 3');
+
+  IncDefs := IncDefs + '        $' + IntToHex(cc4, 4) + ': // ' + SAtom + SLineBreak +
+                       '            Atom := ' + SLines[0] + '.Create(FStream, AtomRec);' + SLineBreak;
 
   TypeDefs := TypeDefs + '  ' + SLines[0] + ' = ' + SLines[1] + ' { $' + IntToHex(cc4, 4) + ': // ' + SAtom + ' }' + SLineBreak +
               '  ' + Slines[2] + SLineBreak +
@@ -197,13 +220,16 @@ begin
     Result := 'ReadMatrix3x3(BufPos, AStream)'
   else if AVarType = 'TMP4FourCC' then
     Result := 'ReadFourCC(BufPos, AStream)'
+
   else if AVarType = 'TMP4FourCCArray' then
-    Result := 'ReadFourCCArray(BufPos, AStream)'
+    Result := 'ReadFourCCArray(BufPos, AStream, (BufSize - BufPos) div SizeOf(TMP4FourCC))'
 
   else if AVarType = 'TMP4ChapterDataList' then
     Result := 'ReadChapterDataList(BufPos, AStream, BufSize)'
   else if AVarType = 'TMP4MetaDataList' then
     Result := 'ReadMetaDataList(BufPos, AStream, BufSize)'
+  else if AVarType = 'TMP4EditDataList' then
+    Result := 'ReadEditDataList(BufPos, AStream, BufSize)'
 
   else if AVarType = 'TCString' then
     Result := 'ReadCString(BufPos, AStream, BufSize)'
