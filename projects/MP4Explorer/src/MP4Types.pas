@@ -24,47 +24,8 @@ type
   { 3x3 Matrix }
   TMP4FourCCArray = Array of TMP4FourCC;
   { Array with redundant fields }
-
-  TMP4MetaData = class
-  strict private
-    FFourCC: TMP4FourCC;
-    FDataType:  UInt32;
-    FLocale: UInt32;
-    FData: TBytes;
-  public
-  published
-    property FourCC: TMP4FourCC read FFourCC write FFourCC;
-    property DataType: UInt32 read FDataType write FDataType;
-    property Locale: UInt32 read FLocale write FLocale;
-    property Data: TBytes read FData write FData;
-  end;
-  TMP4MetaDataList = TObjectList<TMP4MetaData>;
-
-  TMP4ChapterData = class
-  strict private
-    FTimestamp: UInt64;
-    FChapNameLen: Byte;
-    FChapName: TBytes;
-  public
-  published
-    property Timestamp: UInt64 read FTimestamp write FTimestamp;
-    property ChapNameLen: Byte read FChapNameLen write FChapNameLen;
-    property ChapName: TBytes read FChapName write FChapName;
-  end;
-  TMP4ChapterDataList = TObjectList<TMP4ChapterData>;
-
-  TMP4EditData = class
-  strict private
-    FTrackDuration: UInt32;
-    FMediaTime: UInt32;
-    FMediaRate: TMP4Fixed32;
-  public
-  published
-    property TrackDuration: UInt32 read FTrackDuration write FTrackDuration;
-    property MediaTime: UInt32 read FMediaTime write FMediaTime;
-    property MediaRate: TMP4Fixed32 read FMediaRate write FMediaRate;
-  end;
-  TMP4EditDataList = TObjectList<TMP4EditData>;
+  TMP4HDLRString = String;
+  { String to hold messy HDLR atom }
 
 const
   MediaZeroDayTime: UInt32 = 1462;

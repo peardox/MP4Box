@@ -1,0 +1,9 @@
+TAtomSmhd
+class(TAtomFullData)
+{ Sound media information header atom - An atom that stores the sound media’s control information, such as balance. }
+Balance
+UInt16
+{ 2 bytes - Balance }
+Reserved1
+Array[0..1] of Byte
+{ 2 bytes - Reserved For Apple - Skipped completely }

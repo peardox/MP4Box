@@ -45,7 +45,8 @@ uses
 {$ENDIF}
   MP4DerivedAtoms,
   RTTI, TypInfo,
-  IOUtils, MP4Types;
+  IOUtils,
+  MP4Types, MP4ExtendedTypes;
 
 {$R *.fmx}
 

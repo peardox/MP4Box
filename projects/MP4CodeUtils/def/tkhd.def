@@ -1,0 +1,44 @@
+
+
+TAtomTkhd
+class(TAtomFullData)
+{ Track header atom - An atom that specifies the characteristics of a single track within a movie. }
+CreationTime
+TDateTime
+{ 4 bytes - Creation Time }
+ModificationTime
+TDateTime
+{ 4 bytes - Modification Time }
+TrackID
+UInt32
+{ 4 bytes - Track ID }
+Reserved1
+Array[0..3] of Byte
+{ 4 bytes - Reserved For Apple - Skipped completely }
+Duration
+UInt32
+{ 4 bytes - Duration }
+Reserved2
+Array[0..7] of Byte
+{ 8 bytes - Reserved For Apple - Skipped completely }
+Layer
+UInt16
+{ 2 bytes - Layer }
+AlternateGroup
+UInt16
+{ 2 bytes - Alternate Group }
+Volume
+TMP4Fixed16
+{ 2 bytes - Volume }
+Reserved3
+Array[0..1] of Byte
+{ 2 bytes - Reserved For Apple - Skipped completely }
+MatrixStructure
+TMP4Matrix3x3
+{ 36 bytes - Matrix Structure  - TMP4Fixed32 3x3 Matrix }
+TrackWidth
+TMP4Fixed32
+{ 4 bytes - Track Width }
+TrackHeight
+TMP4Fixed32
+{ 4 bytes - Track Height }

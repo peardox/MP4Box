@@ -8,7 +8,9 @@ uses
   MP4Types in 'src\MP4Types.pas',
   MP4Atoms in 'src\MP4Atoms.pas',
   MP4DerivedAtoms in 'src\MP4DerivedAtoms.pas',
-  MP4AutoAtom in 'src\MP4AutoAtom.pas';
+  MP4AutoAtom in 'src\MP4AutoAtom.pas',
+  MP4ExtendedTypes in 'src\MP4ExtendedTypes.pas',
+  MP4SampleTypes in 'src\MP4SampleTypes.pas';
 
 {$R *.res}
 

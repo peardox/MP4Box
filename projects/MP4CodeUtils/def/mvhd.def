@@ -1,0 +1,48 @@
+TAtomMvhd
+class(TAtomFullData)
+{ Movie header atom - An atom that specifies the characteristics of an entire QuickTime movie. }
+CreationTime
+TDateTime
+{ 4 bytes - Creation Time }
+ModificationTime
+TDateTime
+{ 4 bytes - Modification Time }
+TimeScale
+UInt32
+{ 4 bytes - TimeScale - units per second }
+Duration
+UInt32
+{ 4 bytes - Actual Duration - FDuration * (1/FTimeScale) Seconds }
+PreferredRate
+TMP4Fixed32
+{ 4 bytes - Preferred Rate - 1.0 = Normal }
+PreferredVolume
+TMP4Fixed16
+{ 2 bytes - Preferred Volume - 1.0 = Normal }
+Reserved
+Array[0..9] of Byte
+{ 10 bytes - Reserved For Apple - Skipped completely }
+MatrixStructure
+TMP4Matrix3x3
+{ 36 bytes - Matrix Structure - TMP4Fixed16 3x3 Matrix }
+PreviewTime
+UInt32
+{ 4 bytes - Preview time - in TimeScale units }
+PreviewDurartion
+UInt32
+{ 4 bytes - Preview duration - in TimeScale units }
+PosterTime
+UInt32
+{ 4 bytes - Poster Time - in TimeScale units }
+SelectionTime
+UInt32
+{ 4 bytes - Selection Time - in TimeScale units}
+SelectionDuration
+UInt32
+{ 4 bytes - Selection Duration - in TimeScale units}
+CurrentTime
+UInt32
+{ 4 bytes - Current Time - within movie }
+NextTrackID
+UInt32
+{ 4 bytes - Next Track ID }

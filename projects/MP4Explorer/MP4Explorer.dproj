@@ -309,6 +309,8 @@
         <DCCReference Include="src\MP4Atoms.pas"/>
         <DCCReference Include="src\MP4DerivedAtoms.pas"/>
         <DCCReference Include="src\MP4AutoAtom.pas"/>
+        <DCCReference Include="src\MP4ExtendedTypes.pas"/>
+        <DCCReference Include="src\MP4SampleTypes.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

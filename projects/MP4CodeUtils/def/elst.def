@@ -1,0 +1,9 @@
+TAtomElst
+class(TAtomFullData)
+{ Edit List Atom - An atom that maps from a time in a movie to a time in a media, and ultimately to media data. }
+EntryCount
+UInt32
+{ 4 bytes - Number of entries }
+List
+TMP4EditDataList
+{ X bytes - Edit Data Object List}

@@ -26,6 +26,8 @@ begin
       Result := TAtomWide.Create(AtomRec);
 
     { Container Atoms }
+    $64696E66: // dinf
+      Result := TAtomContainer.Create(AtomRec);
     $65647473: // edts
       Result := TAtomContainer.Create(AtomRec);
     $6D646961: // mdia
@@ -62,7 +64,12 @@ begin
       Result := TAtomChap.Create(FStream, AtomRec);
     $656C7374: // elst
       Result := TAtomElst.Create(FStream, AtomRec);
-
+    $6D646864: // mdhd
+      Result := TAtomMdhd.Create(FStream, AtomRec);
+    $68646C72: // hdlr
+      Result := TAtomHdlr.Create(FStream, AtomRec);
+    $736D6864: // smhd
+      Result := TAtomSmhd.Create(FStream, AtomRec);
   else
     Result := Nil;
   end;

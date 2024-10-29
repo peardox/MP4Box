@@ -1,0 +1,6 @@
+TAtomIlst
+class(TAtomLiteData)
+{ An atom that holds a list of actual metadata values that are present in the metadata atom }
+List
+TMP4MetaDataList
+{ X bytes - Meta Data Atom List }

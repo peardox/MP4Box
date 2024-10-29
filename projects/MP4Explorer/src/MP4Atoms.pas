@@ -6,7 +6,7 @@ interface
 
 uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
-  Generics.Defaults, Generics.Collections, MP4Types;
+  Generics.Defaults, Generics.Collections, MP4Types, MP4ExtendedTypes;
 
 type
   TAtom = class;
@@ -69,6 +69,7 @@ type
     function ReadChapterDataList(var BufPos: Int64; var AStream: TStream; const ASize: Int32): TMP4ChapterDataList;
     function ReadEditDataList(var BufPos: Int64; var AStream: TStream; const ASize: Int32): TMP4EditDataList;
     function ReadReserved(var BufPos: Int64; var AStream: TStream; const ASize: Int32): TBytes;
+    function ReadHDLR(var BufPos: Int64; var AStream: TStream; const ASize: Int32; const FCC: TMP4FourCC): String;
     procedure ReadSkip(var BufPos: Int64; var AStream: TStream; const ASize: Int32);
 
   public
@@ -197,6 +198,55 @@ begin
   BufPos := BufPos + (ASize * SizeOf(TMP4FourCC));
 end;
 
+function TAtomAbstractData.ReadHDLR(var BufPos: Int64; var AStream: TStream;
+  const ASize: Int32; const FCC: TMP4FourCC): String;
+var
+  CheckFCC: TMP4FourCC;
+  StrLen: Byte;
+  PStr: TBytes;
+begin
+  { This one is very badly behaved }
+  if (FCC = $6D646972 { mdir }) then
+    begin
+      { Seen in Meta }
+      CheckFCC := ReadFourCC(BufPos, AStream);
+      if (CheckFCC <> $6170706C { appl }) then
+        Raise Exception.Create('Invalid looking hdlr atom for mdir');
+      ReadSkip(BufPos, AStream, 9);
+      Result := '';
+    end
+  else
+    begin
+      ReadSkip(BufPos, AStream, 12);
+      StrLen := ReadByte(BufPos, AStream);
+      { String may be Pascal ShortString or C Zero Terminated so read first byte and test }
+      { Regardless strings are always zero padded - even Pascal ShortStings }
+      if StrLen = (ASize-BufPos-1) then
+        begin
+          { if (FCC = $736F756E) }
+          SetLength(PStr, (ASize-BufPos));
+          PStr := ReadTBytes(BufPos, AStream,(ASize-BufPos));
+          SetString(Result, PAnsiChar(PStr), Length(PStr));
+          { Assign Pascal ShortString }
+          SetLength(PStr, 0);
+          { Free the temp string }
+        end
+      else
+        begin
+          { if (FCC = $736F756E) }
+          SetLength(PStr, ASize-BufPos);
+          PStr := ReadTBytes(BufPos, AStream,ASize-BufPos);
+          SetString(Result, PAnsiChar(PStr), Length(PStr));
+          { Assign C-String remainder }
+          Result := Chr(StrLen) + Result;
+          { Tag on first char we tested for Pascal-string-ness }
+          SetLength(PStr, 0);
+          { Free the temp string }
+        end;
+    end;
+
+end;
+
 function TAtomAbstractData.ReadMediaDateTime(var BufPos: Int64;
   var AStream: TStream): TDateTime;
 var
@@ -216,13 +266,12 @@ function TAtomAbstractData.ReadMetaDataList(var BufPos: Int64;
   function ReadMetaData(var BufPos: Int64; var AStream: TStream): TMP4MetaData;
   var
     AItem: TMP4MetaData;
-  //  MetaSize: UInt32;
     DataFCC: TMP4FourCC;
     DataSize: UInt32;
   begin
     AItem := TMP4MetaData.Create;
-  //  DataSize := ReadUInt32(BufPos, AStream);
-    ReadSkip(BufPos, AStream, 4);
+    AItem.MetaSize := ReadUInt32(BufPos, AStream);
+    // ReadSkip(BufPos, AStream, 4);
     { Just wanna skip this one }
     AItem.FourCC := ReadFourCC(BufPos, AStream);
     DataSize := ReadUInt32(BufPos, AStream);

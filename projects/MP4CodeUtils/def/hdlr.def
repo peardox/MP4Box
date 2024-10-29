@@ -1,0 +1,12 @@
+TAtomHdlr
+class(TAtomFullData)
+{ Metadata handler atom - An atom that defines the structure used for all types of metadata stored within the metadata atom. }
+Predefined
+UInt32
+{ 4 bytes - Zero (0) }
+HandlerType
+TMP4FourCC
+{ 4 bytes - mdta - Handler type - A 32-bit integer that indicates the structure used in the metadata atom. }
+Name
+TMP4HDLRString
+{ X bytes - Pascal / Null terminated UTF-8 string - Usually 0 }

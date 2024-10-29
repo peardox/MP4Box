@@ -27,6 +27,8 @@ type
     function GetSkipSize(const AVarType: String): String;
     procedure MakeMP4AtomWrapper(const AFilepath: String);
     procedure OutputData(const ACode, AInc: String);
+    function MakeAutoAtomHead: String;
+    function MakeAutoAtomTail: String;
     { Private declarations }
   public
     { Public declarations }
@@ -39,6 +41,43 @@ implementation
 
 {$R *.fmx}
 uses MP4Types, IOUtils;
+
+procedure TForm2.Button1Click(Sender: TObject);
+var
+  FPath: String;
+begin
+  FPath := '../../def';
+  MakeMP4AtomWrapper(FPath);
+{
+  if OpenDialog1.Execute then
+    begin
+      // MediaPlayer1.FileName := OpenDialog1.FileName;
+    end;
+}
+end;
+
+procedure TForm2.OutputData(const ACode: String; const AInc: String);
+var
+  CheckPath: String;
+begin
+  CheckPath := '../../../MP4Explorer/src/';
+  if FileExists(CheckPath + 'MP4Boxes.pas') then
+    begin
+      Memo1.Lines.Add(AInc);
+      TFile.WriteAllText(CheckPath + 'MP4AutoAtom.pas', MakeAutoAtomHead + AInc + MakeAutoAtomTail);
+      Memo1.Lines.Add(ACode);
+      TFile.WriteAllText(CheckPath + 'MP4DerivedAtoms.pas', ACode);
+    end;
+end;
+
+procedure TForm2.Button2Click(Sender: TObject);
+begin
+  if OpenDialog1.Execute then
+    begin
+      MediaPlayer1.FileName := OpenDialog1.FileName;
+      MediaPlayer1.Play;
+    end;
+end;
 
 procedure TForm2.MakeMP4AtomWrapper(const AFilepath: String);
 var
@@ -71,26 +110,16 @@ begin
   MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'chpl.def'));
   MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'chap.def'));
   MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'elst.def'));
+  MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'mdhd.def'));
+  MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'hdlr.def'));
+  MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'smhd.def'));
+//  MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'stsd.def'));
 
   FinalCode := StartOfFile + TypeDefs + ImpDef + CodeDefs + EndOfFile;
   FinalInc := IncDefs;
 
   OutputData(FinalCode, FinalInc);
 
-end;
-
-procedure TForm2.OutputData(const ACode: String; const AInc: String);
-var
-  CheckPath: String;
-begin
-  CheckPath := '../../../MP4Explorer/src/';
-  if FileExists(CheckPath + 'MP4Boxes.pas') then
-    begin
-      Memo1.Lines.Add(AInc);
-      TFile.WriteAllText(CheckPath + 'MP4DerivedAtoms.inc', AInc);
-      Memo1.Lines.Add(ACode);
-      TFile.WriteAllText(CheckPath + 'MP4DerivedAtoms.pas', ACode);
-    end;
 end;
 
 procedure TForm2.MakeMP4AtomClass(var IncDefs: String; var TypeDefs: String; var CodeDefs: String; const AFilename: String);
@@ -116,8 +145,8 @@ begin
   if Length(SLines) <> (Triplets * 3) then
     Raise Exception.Create('Lines in ' + AFilename + ' not divisible by 3');
 
-  IncDefs := IncDefs + '        $' + IntToHex(cc4, 4) + ': // ' + SAtom + SLineBreak +
-                       '            Atom := ' + SLines[0] + '.Create(FStream, AtomRec);' + SLineBreak;
+  IncDefs := IncDefs + '    $' + IntToHex(cc4, 4) + ': // ' + SAtom + SLineBreak +
+                       '      Result := ' + SLines[0] + '.Create(FStream, AtomRec);' + SLineBreak;
 
   TypeDefs := TypeDefs + '  ' + SLines[0] + ' = ' + SLines[1] + ' { $' + IntToHex(cc4, 4) + ': // ' + SAtom + ' }' + SLineBreak +
               '  ' + Slines[2] + SLineBreak +
@@ -164,29 +193,6 @@ begin
   CodeDefs := CodeDefs + 'end;' + SLineBreak + SLineBreak;
 end;
 
-procedure TForm2.Button1Click(Sender: TObject);
-var
-  FPath: String;
-begin
-  FPath := 'C:\git\MkMp4Obj\def';
-  MakeMP4AtomWrapper(FPath);
-{
-  if OpenDialog1.Execute then
-    begin
-      // MediaPlayer1.FileName := OpenDialog1.FileName;
-    end;
-}
-end;
-
-procedure TForm2.Button2Click(Sender: TObject);
-begin
-  if OpenDialog1.Execute then
-    begin
-      MediaPlayer1.FileName := OpenDialog1.FileName;
-      MediaPlayer1.Play;
-    end;
-end;
-
 function TForm2.CreateDataCode(const AVarName: String; const AVarType: String): String;
 begin
   if AVarName.StartsWith('Reserved') then
@@ -230,6 +236,8 @@ begin
     Result := 'ReadMetaDataList(BufPos, AStream, BufSize)'
   else if AVarType = 'TMP4EditDataList' then
     Result := 'ReadEditDataList(BufPos, AStream, BufSize)'
+  else if AVarType = 'TMP4HDLRString' then
+    Result := 'ReadHDLR(BufPos, AStream, BufSize, FHandlerType)'
 
   else if AVarType = 'TCString' then
     Result := 'ReadCString(BufPos, AStream, BufSize)'
@@ -260,5 +268,71 @@ begin
 
   Result := IntToStr(SkipNum + 1);
 end;
+
+function TForm2.MakeAutoAtomHead: String;
+begin
+  Result := 'unit MP4AutoAtom;' + SLineBreak;
+  Result := Result + '' + SLineBreak;
+  Result := Result + 'interface' + SLineBreak;
+  Result := Result + '' + SLineBreak;
+  Result := Result + 'uses' + SLineBreak;
+  Result := Result + '  System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,' + SLineBreak;
+  Result := Result + '  Generics.Defaults, Generics.Collections, MP4Atoms, MP4DerivedAtoms, MP4Types;' + SLineBreak;
+  Result := Result + '' + SLineBreak;
+  Result := Result + 'function CreateAutoAtom(FStream: TStream; const AtomRec: TAtomRec): TAtom;' + SLineBreak;
+  Result := Result + '' + SLineBreak;
+  Result := Result + 'implementation' + SLineBreak;
+  Result := Result + '' + SLineBreak;
+  Result := Result + 'function CreateAutoAtom(FStream: TStream; const AtomRec: TAtomRec): TAtom;' + SLineBreak;
+  Result := Result + 'begin' + SLineBreak;
+  Result := Result + '  case AtomRec.FourCC of' + SLineBreak;
+  Result := Result + '    { Binary Blob Atom }' + SLineBreak;
+  Result := Result + '    $6D646174: // mdat' + SLineBreak;
+  Result := Result + '      Result := TAtomOpaqueData.Create(AtomRec);' + SLineBreak;
+  Result := Result + '' + SLineBreak;
+  Result := Result + '    { Empty Atoms }' + SLineBreak;
+  Result := Result + '    $66726565: // free' + SLineBreak;
+  Result := Result + '      Result := TAtomFree.Create(AtomRec);' + SLineBreak;
+  Result := Result + '    $736B6970: // skip' + SLineBreak;
+  Result := Result + '      Result := TAtomSkip.Create(AtomRec);' + SLineBreak;
+  Result := Result + '    $77696465: // wide' + SLineBreak;
+  Result := Result + '      Result := TAtomWide.Create(AtomRec);' + SLineBreak;
+  Result := Result + '' + SLineBreak;
+  Result := Result + '    { Container Atoms }' + SLineBreak;
+  Result := Result + '    $64696E66: // dinf' + SLineBreak;
+  Result := Result + '      Result := TAtomContainer.Create(AtomRec);' + SLineBreak;
+  Result := Result + '    $65647473: // edts' + SLineBreak;
+  Result := Result + '      Result := TAtomContainer.Create(AtomRec);' + SLineBreak;
+  Result := Result + '    $6D646961: // mdia' + SLineBreak;
+  Result := Result + '      Result := TAtomContainer.Create(AtomRec);' + SLineBreak;
+  Result := Result + '    $6D696E66: // minf' + SLineBreak;
+  Result := Result + '      Result := TAtomContainer.Create(AtomRec);' + SLineBreak;
+  Result := Result + '    $6D6F6F76: // moov' + SLineBreak;
+  Result := Result + '      Result := TAtomContainer.Create(AtomRec);' + SLineBreak;
+  Result := Result + '    $7374626C: // stbl' + SLineBreak;
+  Result := Result + '      Result := TAtomContainer.Create(AtomRec);' + SLineBreak;
+  Result := Result + '    $7472616B: // trak' + SLineBreak;
+  Result := Result + '      Result := TAtomContainer.Create(AtomRec);' + SLineBreak;
+  Result := Result + '    $74726566: // tref' + SLineBreak;
+  Result := Result + '      Result := TAtomContainer.Create(AtomRec);' + SLineBreak;
+  Result := Result + '    $75647461: // udta' + SLineBreak;
+  Result := Result + '      Result := TAtomContainer.Create(AtomRec);' + SLineBreak;
+  Result := Result + '' + SLineBreak;
+  Result := Result + '    { Full Container Atoms }' + SLineBreak;
+  Result := Result + '    $6D657461: // meta' + SLineBreak;
+  Result := Result + '      Result := TAtomMeta.Create(FStream, AtomRec);' + SLineBreak;
+  Result := Result + '' + SLineBreak;
+  Result := Result + '    { AutoGenerated Data Atoms }' + SLineBreak;
+end;
+
+function TForm2.MakeAutoAtomTail: String;
+begin
+  Result := '  else' + SLineBreak;
+  Result := Result + '    Result := Nil;' + SLineBreak;
+  Result := Result + '  end;' + SLineBreak;
+  Result := Result + 'end;' + SLineBreak;
+  Result := Result + '' + SLineBreak;
+  Result := Result + 'end.' + SLineBreak;
+  Result := Result + '';end;
 
 end.

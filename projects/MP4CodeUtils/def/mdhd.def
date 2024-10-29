@@ -1,0 +1,21 @@
+TAtomMdhd
+class(TAtomFullData)
+{ Media header atom - An atom that specifies the characteristics of a media, including time scale and duration }
+CreationTime
+TDateTime
+{ 4 bytes - Creation Time }
+ModificationTime
+TDateTime
+{ 4 bytes - Modification Time }
+TimeScale
+UInt32
+{ 4 bytes - TimeScale - units per second }
+Duration
+UInt32
+{ 4 bytes - Actual Duration - FDuration * (1/FTimeScale) Seconds }
+Language
+UInt16
+{ 2 bytes - Language code, a wierd Mac one }
+Quality
+UInt16
+{ 2 bytes - A 16-bit integer that specifies the media’s playback quality. }

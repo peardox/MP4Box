@@ -40,7 +40,7 @@ object Form2: TForm2
       Position.X = 552.000000000000000000
       Position.Y = 8.000000000000000000
       TabOrder = 1
-      Text = 'Button1'
+      Text = 'Create Code'
       TextSettings.Trimming = None
       OnClick = Button1Click
     end
@@ -48,7 +48,7 @@ object Form2: TForm2
       Position.X = 32.000000000000000000
       Position.Y = 8.000000000000000000
       TabOrder = 2
-      Text = 'Button2'
+      Text = 'Play Test'
       TextSettings.Trimming = None
       OnClick = Button2Click
     end

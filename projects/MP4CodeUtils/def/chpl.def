@@ -1,0 +1,12 @@
+TAtomChpl
+class(TAtomFullData)
+{ Chapter List Description Atom }
+Reserved
+Array[0..3] of Byte
+{ 4 bytes - Unknown use }
+ChapterCount
+Byte
+{ 1 byte - Number of chapters }
+List
+TMP4ChapterDataList
+{ X bytes - Chapter Data Object List}

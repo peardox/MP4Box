@@ -1,0 +1,9 @@
+TAtomStsd
+class(TAtomFullData)
+{ Sample description atom - An atom that stores information that allows you to decode samples in the media. }
+EntryCount
+UInt32
+{ 4 bytes - Number of Entries - units per second }
+List
+TMP4SampleDescDataList
+{ X bytes - Sample Decription Table }

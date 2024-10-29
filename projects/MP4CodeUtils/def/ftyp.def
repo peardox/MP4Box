@@ -1,0 +1,12 @@
+TAtomFtyp
+class(TAtomLiteData)
+{ File type compatibility atom - An atom that identifies the file type specifications with which the file is compatible. }
+MajorBrand
+TMP4FourCC
+{ 4 bytes - Major Brand }
+MinorBrand
+TMP4FourCC
+{ 4 bytes - Minor Brand }
+CompatibleBrands
+TMP4FourCCArray
+{ X bytes - Compatible Brands - Varable array of types }

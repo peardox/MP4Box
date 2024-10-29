@@ -1,0 +1,6 @@
+TAtomChap
+class(TAtomLiteData)
+{ Chapter atom - Chapter or scene list. Usually references a text track. }
+TrackID
+UInt32
+{ 4 bytes - Track ID }

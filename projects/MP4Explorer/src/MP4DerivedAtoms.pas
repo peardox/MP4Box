@@ -1,4 +1,4 @@
-unit MP4DerivedAtoms;
+﻿unit MP4DerivedAtoms;
 
 {$M+}
 
@@ -6,7 +6,7 @@ interface
 
 uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
-  Generics.Defaults, Generics.Collections, MP4Atoms, MP4Types;
+  Generics.Defaults, Generics.Collections, MP4Atoms, MP4Types, MP4ExtendedTypes;
 
 type  TAtomFtyp = class(TAtomLiteData) { $66747970: // ftyp }
   { File type compatibility atom - An atom that identifies the file type specifications with which the file is compatible. }
@@ -162,15 +162,71 @@ type  TAtomFtyp = class(TAtomLiteData) { $66747970: // ftyp }
   TAtomElst = class(TAtomFullData) { $656C7374: // elst }
   { Edit List Atom - An atom that maps from a time in a movie to a time in a media, and ultimately to media data. }
   strict private
-    FChapterCount: UInt32;
+    FEntryCount: UInt32;
     { 4 bytes - Number of entries }
     FList: TMP4EditDataList;
     { X bytes - Edit Data Object List}
   public
     procedure ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64); override;
   published
-    property ChapterCount: UInt32 read FChapterCount write FChapterCount;
+    property EntryCount: UInt32 read FEntryCount write FEntryCount;
     property List: TMP4EditDataList read FList write FList;
+  end;
+
+  TAtomMdhd = class(TAtomFullData) { $6D646864: // mdhd }
+  { Media header atom - An atom that specifies the characteristics of a media, including time scale and duration }
+  strict private
+    FCreationTime: TDateTime;
+    { 4 bytes - Creation Time }
+    FModificationTime: TDateTime;
+    { 4 bytes - Modification Time }
+    FTimeScale: UInt32;
+    { 4 bytes - TimeScale - units per second }
+    FDuration: UInt32;
+    { 4 bytes - Actual Duration - FDuration * (1/FTimeScale) Seconds }
+    FLanguage: UInt16;
+    { 2 bytes - Language code, a wierd Mac one }
+    FQuality: UInt16;
+    { 2 bytes - A 16-bit integer that specifies the media’s playback quality. }
+  public
+    procedure ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64); override;
+  published
+    property CreationTime: TDateTime read FCreationTime write FCreationTime;
+    property ModificationTime: TDateTime read FModificationTime write FModificationTime;
+    property TimeScale: UInt32 read FTimeScale write FTimeScale;
+    property Duration: UInt32 read FDuration write FDuration;
+    property Language: UInt16 read FLanguage write FLanguage;
+    property Quality: UInt16 read FQuality write FQuality;
+  end;
+
+  TAtomHdlr = class(TAtomFullData) { $68646C72: // hdlr }
+  { Metadata handler atom - An atom that defines the structure used for all types of metadata stored within the metadata atom. }
+  strict private
+    FPredefined: UInt32;
+    { 4 bytes - Zero (0) }
+    FHandlerType: TMP4FourCC;
+    { 4 bytes - mdta - Handler type - A 32-bit integer that indicates the structure used in the metadata atom. }
+    FName: TMP4HDLRString;
+    { X bytes - Pascal / Null terminated UTF-8 string - Usually 0 }
+  public
+    procedure ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64); override;
+  published
+    property Predefined: UInt32 read FPredefined write FPredefined;
+    property HandlerType: TMP4FourCC read FHandlerType write FHandlerType;
+    property Name: TMP4HDLRString read FName write FName;
+  end;
+
+  TAtomSmhd = class(TAtomFullData) { $736D6864: // smhd }
+  { Sound media information header atom - An atom that stores the sound media’s control information, such as balance. }
+  strict private
+    FBalance: UInt16;
+    { 2 bytes - Balance }
+    FReserved1: TBytes;
+    { 2 bytes - Reserved For Apple - Skipped completely }
+  public
+    procedure ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64); override;
+  published
+    property Balance: UInt16 read FBalance write FBalance;
   end;
 
 implementation
@@ -250,8 +306,37 @@ end;
 
 procedure TAtomElst.ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64);
 begin
-  FChapterCount := ReadUInt32(BufPos, AStream);
+  FEntryCount := ReadUInt32(BufPos, AStream);
   FList := ReadEditDataList(BufPos, AStream, BufSize);
+end;
+
+{ TAtomMdhd }
+
+procedure TAtomMdhd.ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64);
+begin
+  FCreationTime := ReadMediaDateTime(BufPos, AStream);
+  FModificationTime := ReadMediaDateTime(BufPos, AStream);
+  FTimeScale := ReadUInt32(BufPos, AStream);
+  FDuration := ReadUInt32(BufPos, AStream);
+  FLanguage := ReadUInt16(BufPos, AStream);
+  FQuality := ReadUInt16(BufPos, AStream);
+end;
+
+{ TAtomHdlr }
+
+procedure TAtomHdlr.ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64);
+begin
+  FPredefined := ReadUInt32(BufPos, AStream);
+  FHandlerType := ReadFourCC(BufPos, AStream);
+  FName := ReadHDLR(BufPos, AStream, BufSize, FHandlerType);
+end;
+
+{ TAtomSmhd }
+
+procedure TAtomSmhd.ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64);
+begin
+  FBalance := ReadUInt16(BufPos, AStream);
+  FReserved1 := ReadReserved(BufPos, AStream, 2);
 end;
 
 end.
