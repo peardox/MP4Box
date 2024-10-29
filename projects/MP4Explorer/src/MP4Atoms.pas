@@ -6,7 +6,7 @@ interface
 
 uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
-  Generics.Defaults, Generics.Collections, MP4Types, MP4ExtendedTypes;
+  Generics.Defaults, Generics.Collections, MP4Types, MP4ExtendedTypes, MP4FileAtom;
 
 type
   TAtom = class;
@@ -23,7 +23,7 @@ type
 
   TAtomObjectList = TObjectList<TAtom>;
 
-  TAtom = class
+  TAtom = class(TMP4FileAtom)
   strict private
     FParent: TAtom;
     FAbsPos: Int64;
@@ -55,16 +55,7 @@ type
   strict private
   protected
     function ReadMatrix3x3(var BufPos: Int64; var AStream: TStream): TMP4Matrix3x3;
-    function ReadSingle(var BufPos: Int64; var AStream: TStream): Single;
-    function UIntToMediaTime(const ATime: UInt32): TDateTime;
     function ReadFourCCArray(var BufPos: Int64; var AStream: TStream; const ASize: Int32): TMP4FourCCArray;
-    function ReadMediaDateTime(var BufPos: Int64; var AStream: TStream): TDateTime;
-    function ReadFourCC(var BufPos: Int64; var AStream: TStream): TMP4FourCC;
-    function ReadUInt64(var BufPos: Int64; var AStream: TStream): UInt64;
-    function ReadUInt32(var BufPos: Int64; var AStream: TStream): UInt32;
-    function ReadUInt16(var BufPos: Int64; var AStream: TStream): UInt16;
-    function ReadByte(var BufPos: Int64; var AStream: TStream): Byte;
-    function ReadTBytes(var BufPos: Int64; var AStream: TStream; const ASize: Int32): TBytes;
     function ReadMetaDataList(var BufPos: Int64; var AStream: TStream; const ASize: Int32): TMP4MetaDataList;
     function ReadChapterDataList(var BufPos: Int64; var AStream: TStream; const ASize: Int32): TMP4ChapterDataList;
     function ReadEditDataList(var BufPos: Int64; var AStream: TStream; const ASize: Int32): TMP4EditDataList;
@@ -147,28 +138,6 @@ end;
 
 { TAtomAbstractData }
 
-function TAtomAbstractData.UIntToMediaTime(const ATime: UInt32): TDateTime;
-var
-  Secs: UInt32;
-  Days: UInt32;
-  DateFloat: Double;
-begin
-  Days := ATime div SecondsInDay;
-  Secs := ATime - (Days * SecondsInDay);
-  DateFloat := MediaZeroDayTime + Days + (Secs / SecondsInDay);
-  Result := TDateTime(DateFloat);
-end;
-
-function TAtomAbstractData.ReadFourCC(var BufPos: Int64;
-  var AStream: TStream): TMP4FourCC;
-begin
-  if AStream.Position > (AStream.Size + 4) then
-    Raise Exception.Create('Buffer too small');
-
-  AStream.Read(Result, SizeOf(Result));
-  Result := SwapBytes32(Result);
-  BufPos := BufPos+4;
-end;
 
 function TAtomAbstractData.ReadFourCCArray(var BufPos: Int64;
   var AStream: TStream;  const ASize: Int32): TMP4FourCCArray;
@@ -247,19 +216,6 @@ begin
 
 end;
 
-function TAtomAbstractData.ReadMediaDateTime(var BufPos: Int64;
-  var AStream: TStream): TDateTime;
-var
-  T: UInt32;
-begin
-  if AStream.Position > (AStream.Size + 4) then
-    Raise Exception.Create('Buffer too small');
-
-  AStream.Read(T, SizeOf(T));
-  Result := UIntToMediaTime(SwapBytes32(T));
-  BufPos := BufPos+4;
-end;
-
 function TAtomAbstractData.ReadMetaDataList(var BufPos: Int64;
   var AStream: TStream; const ASize: Int32): TMP4MetaDataList;
 
@@ -308,16 +264,6 @@ end;
 constructor TAtomAbstractData.Create(const ARec: TAtomRec);
 begin
   inherited;
-end;
-
-function TAtomAbstractData.ReadByte(var BufPos: Int64;
-  var AStream: TStream): Byte;
-begin
-  if AStream.Position > (AStream.Size + SizeOf(Byte)) then
-    Raise Exception.Create('Buffer too small');
-
-  AStream.Read(Result, SizeOf(Result));
-  BufPos := BufPos+SizeOf(Byte);
 end;
 
 function TAtomAbstractData.ReadChapterDataList(var BufPos: Int64;
@@ -384,17 +330,6 @@ begin
   Result := AList;
 end;
 
-function TAtomAbstractData.ReadUInt16(var BufPos: Int64;
-  var AStream: TStream): UInt16;
-begin
-  if AStream.Position > (AStream.Size + 2) then
-    Raise Exception.Create('Buffer too small');
-
-  AStream.Read(Result, SizeOf(Result));
-  Result := SwapBytes16(Result);
-  BufPos := BufPos+2;
-end;
-
 function TAtomAbstractData.ReadMatrix3x3(var BufPos: Int64;
   var AStream: TStream): TMP4Matrix3x3;
 var
@@ -407,38 +342,6 @@ begin
   for Row := 0 to 2 do
     for Col := 0 to 2 do
       Result[(Row*3) + Col] := ReadUInt32(BufPos, AStream);
-end;
-
-function TAtomAbstractData.ReadUInt32(var BufPos: Int64;
-  var AStream: TStream): UInt32;
-begin
-  if AStream.Position > (AStream.Size + 4) then
-    Raise Exception.Create('Buffer too small');
-
-  AStream.Read(Result, SizeOf(Result));
-  Result := SwapBytes32(Result);
-  BufPos := BufPos+4;
-end;
-
-function TAtomAbstractData.ReadUInt64(var BufPos: Int64;
-  var AStream: TStream): UInt64;
-begin
-  if AStream.Position > (AStream.Size + SizeOf(UInt64)) then
-    Raise Exception.Create('Buffer too small');
-
-  AStream.Read(Result, SizeOf(Result));
-  Result := SwapBytes64(Result);
-  BufPos := BufPos+SizeOf(UInt64);
-end;
-
-function TAtomAbstractData.ReadSingle(var BufPos: Int64;
-  var AStream: TStream): Single;
-begin
-  if AStream.Position > (AStream.Size + 4) then
-    Raise Exception.Create('Buffer too small');
-
-  AStream.Read(Result, SizeOf(Result));
-  BufPos := BufPos+4;
 end;
 
 function TAtomAbstractData.ReadReserved(var BufPos: Int64; var AStream: TStream; const ASize: Int32): TBytes;
@@ -462,17 +365,6 @@ begin
   SetLength(T, ASize);
   AStream.Read(T, ASize);
   SetLength(T, 0);
-  BufPos := BufPos + ASize;
-end;
-
-function TAtomAbstractData.ReadTBytes(var BufPos: Int64; var AStream: TStream;
-  const ASize: Int32): TBytes;
-begin
-  if AStream.Position > (AStream.Size + ASize) then
-    Raise Exception.Create('Buffer too small');
-
-  SetLength(Result, ASize);
-  AStream.Read(Result, ASize);
   BufPos := BufPos + ASize;
 end;
 
