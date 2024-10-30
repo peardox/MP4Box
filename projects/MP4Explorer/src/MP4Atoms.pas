@@ -6,7 +6,7 @@ interface
 
 uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
-  Generics.Defaults, Generics.Collections, MP4Types, MP4ExtendedTypes, MP4FileAtom;
+  Generics.Defaults, Generics.Collections, MP4Types, MP4ExtendedTypes, MP4SampleTypes, MP4FileAtom;
 
 type
   TAtom = class;
@@ -60,7 +60,9 @@ type
     function ReadChapterDataList(var BufPos: Int64; var AStream: TStream; const ASize: Int32): TMP4ChapterDataList;
     function ReadEditDataList(var BufPos: Int64; var AStream: TStream; const ASize: Int32): TMP4EditDataList;
     function ReadReserved(var BufPos: Int64; var AStream: TStream; const ASize: Int32): TBytes;
+    function ReadSampleDescDataList(var BufPos: Int64; var AStream: TStream; const ASize: Int32): TMP4SampleDescDataList;
     function ReadHDLR(var BufPos: Int64; var AStream: TStream; const ASize: Int32; const FCC: TMP4FourCC): String;
+    function ReadSttsArray(var BufPos: Int64; var AStream: TStream; const AEntryCount: Int32): TSttsArray;
     procedure ReadSkip(var BufPos: Int64; var AStream: TStream; const ASize: Int32);
 
   public
@@ -179,7 +181,7 @@ begin
     begin
       { Seen in Meta }
       CheckFCC := ReadFourCC(BufPos, AStream);
-      if (CheckFCC <> $6170706C { appl }) then
+      if (CheckFCC <> $6170706C { appl }) and (CheckFCC <> $00000000 { <NULL> }) then
         Raise Exception.Create('Invalid looking hdlr atom for mdir');
       ReadSkip(BufPos, AStream, 9);
       Result := '';
@@ -354,6 +356,25 @@ begin
   BufPos := BufPos + ASize;
 end;
 
+function TAtomAbstractData.ReadSampleDescDataList(var BufPos: Int64;
+  var AStream: TStream; const ASize: Int32): TMP4SampleDescDataList;
+var
+  L: TMP4SampleDescDataList;
+  D: TMP4SampleDescData;
+begin
+  L:= TMP4SampleDescDataList.Create(True);
+  D := TMP4SampleDescData.Create;
+  D.SampleDescSize := ReadUInt32(BufPos, AStream);
+  D.FourCC := ReadFourCC(BufPos, AStream);
+  D.Reserved := ReadReserved(BufPos, AStream, 6); // Six zero bytes
+  D.DataRefIndex := ReadUInt16(BufPos, AStream);
+  D.Data := TMP4SampleTypeAudio0.Create; // Variable Data
+  D.Data.ReadFromStream(BufPos, AStream, ASize);
+  L.Add(D);
+
+  Result := L;
+end;
+
 procedure TAtomAbstractData.ReadSkip(var BufPos: Int64; var AStream: TStream;
   const ASize: Int32);
 var
@@ -366,6 +387,27 @@ begin
   AStream.Read(T, ASize);
   SetLength(T, 0);
   BufPos := BufPos + ASize;
+end;
+
+function TAtomAbstractData.ReadSttsArray(var BufPos: Int64;
+  var AStream: TStream; const AEntryCount: Int32): TSttsArray;
+var
+  I: Int32;
+begin
+  if AStream.Position > (AStream.Size + (SizeOf(TSttsRec) * AEntryCount)) then
+    Raise Exception.Create('Buffer too small');
+
+  SetLength(Result, AEntryCount);
+
+  for I := 0 to AEntryCount - 1 do
+    begin
+      AStream.Read(Result[I].Count, SizeOf(Int32));
+      Result[I].Count := SwapBytes32(Result[I].Count);
+      AStream.Read(Result[I].Duration, SizeOf(Int32));
+      Result[I].Duration := SwapBytes32(Result[I].Duration);
+    end;
+
+  BufPos := BufPos+(SizeOf(TSttsRec) * AEntryCount);
 end;
 
 { TAtomLite }

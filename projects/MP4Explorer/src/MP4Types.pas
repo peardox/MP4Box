@@ -26,6 +26,14 @@ type
   { Array with redundant fields }
   TMP4HDLRString = String;
   { String to hold messy HDLR atom }
+  TUInt64Array = Array of UInt64;
+  TUInt32Array = Array of UInt32;
+
+  TSttsRec = record
+    Count: Int32;
+    Duration: Int32;
+  end;
+  TSttsArray = Array of TSttsRec;
 
 const
   MediaZeroDayTime: UInt32 = 1462;
@@ -33,10 +41,12 @@ const
   SecondsInDay: UInt32 = 86400;
   { Need to calc dates... }
 
-function SwapBytes64(const aVal: UInt64): UInt64; inline;
-function SwapBytes32(Value: UInt32): UInt32; inline;
-function SwapBytes16(Value: UInt16): UInt16; inline;
-function TFourCCToStr(a: TFourCC): String;
+function SwapBytes64(const Value: UInt64): UInt64; inline; overload;
+function SwapBytes64(const Value: Int64): Int64; inline; overload;
+function SwapBytes32(Value: UInt32): UInt32; inline; overload;
+function SwapBytes32(Value: Int32): Int32; inline; overload;
+function SwapBytes16(Value: UInt16): UInt16; inline; overload;
+function SwapBytes16(Value: Int16): Int16; inline; overload;
 function FourCCToString(const AFourCC: TMP4FourCC): String;
 function IsValidFourCC(const AFourCC: TMP4FourCC): Boolean;
 function StringToFourCC(const AStr: String): TMP4FourCC;
@@ -65,26 +75,45 @@ begin
   Result := MakeFourCC(AnsiChar(AStr[4]), AnsiChar(AStr[3]), AnsiChar(AStr[2]), AnsiChar(AStr[1]));
 end;
 
-function SwapBytes64(const aVal: UInt64): UInt64; inline;
+function SwapBytes64(const Value: Int64): Int64;
 begin
-    Int64Rec(Result).Bytes[0] :=  Int64Rec(aVal).Bytes[7];
-    Int64Rec(Result).Bytes[1] :=  Int64Rec(aVal).Bytes[6];
-    Int64Rec(Result).Bytes[2] :=  Int64Rec(aVal).Bytes[5];
-    Int64Rec(Result).Bytes[3] :=  Int64Rec(aVal).Bytes[4];
-    Int64Rec(Result).Bytes[4] :=  Int64Rec(aVal).Bytes[3];
-    Int64Rec(Result).Bytes[5] :=  Int64Rec(aVal).Bytes[2];
-    Int64Rec(Result).Bytes[6] :=  Int64Rec(aVal).Bytes[1];
-    Int64Rec(Result).Bytes[7] :=  Int64Rec(aVal).Bytes[0];
+  Result := Int64(SwapBytes64(Uint64(Value)));
 end;
 
-function SwapBytes32(Value: UInt32): UInt32; inline;
+function SwapBytes64(const Value: UInt64): UInt64;
 begin
-  Result := (Value SHR 24) OR (Value SHL 24) OR ((Value AND $00FF0000) SHR 8) OR ((Value AND $0000FF00) SHL 8);
+  Result := ((Value AND $FF00000000000000) SHR 56) OR
+            ((Value AND $00FF000000000000) SHR 40) OR
+            ((Value AND $0000FF0000000000) SHR 24) OR
+            ((Value AND $000000FF00000000) SHR  8) OR
+            ((Value AND $00000000FF000000) SHL  8) OR
+            ((Value AND $0000000000FF0000) SHL 24) OR
+            ((Value AND $000000000000FF00) SHL 40) OR
+            ((Value AND $00000000000000FF) SHL 56);
 end;
 
-function SwapBytes16(Value: UInt16): UInt16; inline;
+function SwapBytes32(Value: Int32): Int32;
 begin
-  Result := ((Value and $FF00) SHR 8) OR ((Value and $00FF) SHL 8);
+  Result := Int32(SwapBytes32(Uint32(Value)));
+end;
+
+function SwapBytes32(Value: UInt32): UInt32;
+begin
+  Result := ((Value AND $FF000000) SHR 24) OR
+            ((Value AND $00FF0000) SHR 8) OR
+            ((Value AND $0000FF00) SHL 8) OR
+            ((Value AND $000000FF) SHL 24);
+end;
+
+function SwapBytes16(Value: Int16): Int16;
+begin
+  Result := Int16(SwapBytes16(Uint16(Value)));
+end;
+
+function SwapBytes16(Value: UInt16): UInt16;
+begin
+  Result := ((Value and $FF00) SHR 8) OR
+            ((Value and $00FF) SHL 8);
 end;
 
 function IsValidFourCC(const AFourCC: TMP4FourCC): Boolean;
@@ -101,9 +130,5 @@ begin
             IsValid(Byte(AFourCC and $000000FF));
 end;
 
-function TFourCCToStr(a: TFourCC): String;
-begin
-  Result := Chr(a[0])+Chr(a[1])+Chr(a[2])+Chr(a[3]);
-end;
 
 end.

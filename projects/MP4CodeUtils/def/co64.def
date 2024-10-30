@@ -1,0 +1,9 @@
+TAtomCo64
+class(TAtomFullData)
+{ 64 bit Chunk offset atom - An atom that identifies the location of each chunk of data in the media’s data stream. }
+EntryCount
+Int32
+{ 4 bytes - Number of Entries in chunk table }
+Table
+TUInt64Array
+{ X bytes - Chunk Table }

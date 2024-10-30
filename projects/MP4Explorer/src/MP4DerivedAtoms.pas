@@ -1,4 +1,4 @@
-﻿unit MP4DerivedAtoms;
+unit MP4DerivedAtoms;
 
 {$M+}
 
@@ -229,6 +229,62 @@ type  TAtomFtyp = class(TAtomLiteData) { $66747970: // ftyp }
     property Balance: UInt16 read FBalance write FBalance;
   end;
 
+  TAtomStsd = class(TAtomFullData) { $73747364: // stsd }
+  { Sample description atom - An atom that stores information that allows you to decode samples in the media. }
+  strict private
+    FEntryCount: UInt32;
+    { 4 bytes - Number of Entries - units per second }
+    FList: TMP4SampleDescDataList;
+    { X bytes - Sample Decription Table }
+  public
+    procedure ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64); override;
+  published
+    property EntryCount: UInt32 read FEntryCount write FEntryCount;
+    property List: TMP4SampleDescDataList read FList write FList;
+  end;
+
+  TAtomStco = class(TAtomFullData) { $7374636F: // stco }
+  { Chunk offset atom - An atom that identifies the location of each chunk of data in the media’s data stream. }
+  strict private
+    FEntryCount: Int32;
+    { 4 bytes - Number of Entries in chunk table }
+    FTable: TUInt32Array;
+    { X bytes - Chunk Table }
+  public
+    procedure ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64); override;
+  published
+    property EntryCount: Int32 read FEntryCount write FEntryCount;
+    property Table: TUInt32Array read FTable write FTable;
+  end;
+
+  TAtomCo64 = class(TAtomFullData) { $636F3634: // co64 }
+  { 64 bit Chunk offset atom - An atom that identifies the location of each chunk of data in the media’s data stream. }
+  strict private
+    FEntryCount: Int32;
+    { 4 bytes - Number of Entries in chunk table }
+    FTable: TUInt64Array;
+    { X bytes - Chunk Table }
+  public
+    procedure ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64); override;
+  published
+    property EntryCount: Int32 read FEntryCount write FEntryCount;
+    property Table: TUInt64Array read FTable write FTable;
+  end;
+
+  TAtomStts = class(TAtomFullData) { $73747473: // stts }
+  { Time-to-sample atom - An atom that stores duration information for a media’s samples, providing a mapping from a time in a media to the corresponding data sample. }
+  strict private
+    FEntryCount: Int32;
+    { 4 bytes - Number of Entries in table }
+    FTable: TSttsArray;
+    { X bytes - Time-to-sample Table }
+  public
+    procedure ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64); override;
+  published
+    property EntryCount: Int32 read FEntryCount write FEntryCount;
+    property Table: TSttsArray read FTable write FTable;
+  end;
+
 implementation
 { TAtomFtyp }
 
@@ -337,6 +393,38 @@ procedure TAtomSmhd.ReadFromStream(var BufPos: Int64; var AStream: TStream; cons
 begin
   FBalance := ReadUInt16(BufPos, AStream);
   FReserved1 := ReadReserved(BufPos, AStream, 2);
+end;
+
+{ TAtomStsd }
+
+procedure TAtomStsd.ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64);
+begin
+  FEntryCount := ReadUInt32(BufPos, AStream);
+  FList := ReadSampleDescDataList(BufPos, AStream, BufSize);
+end;
+
+{ TAtomStco }
+
+procedure TAtomStco.ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64);
+begin
+  FEntryCount := ReadInt32(BufPos, AStream);
+  FTable := ReadUInt32Array(BufPos, AStream, FEntryCount);
+end;
+
+{ TAtomCo64 }
+
+procedure TAtomCo64.ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64);
+begin
+  FEntryCount := ReadInt32(BufPos, AStream);
+  FTable := ReadUInt64Array(BufPos, AStream, FEntryCount);
+end;
+
+{ TAtomStts }
+
+procedure TAtomStts.ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64);
+begin
+  FEntryCount := ReadInt32(BufPos, AStream);
+  FTable := ReadSttsArray(BufPos, AStream, FEntryCount);
 end;
 
 end.

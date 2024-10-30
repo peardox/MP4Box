@@ -93,7 +93,7 @@ begin
                   '' + SLineBreak +
                   'uses' + SLineBreak +
                   '  System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,' + SLineBreak +
-                  '  Generics.Defaults, Generics.Collections, MP4Atoms, MP4Types;' + SLineBreak +
+                  '  Generics.Defaults, Generics.Collections, MP4Atoms, MP4Types, MP4ExtendedTypes;' + SLineBreak +
                   '' + SLineBreak +
                   'type';
 
@@ -102,23 +102,27 @@ begin
   ImpDef := 'implementation' + SLineBreak;
   CodeDefs := '';
   EndOfFile := 'end.' + SLineBreak;
+  try
+    MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'ftyp.def'));
+    MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'mvhd.def'));
+    MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'tkhd.def'));
+    MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'ilst.def'));
+    MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'chpl.def'));
+    MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'chap.def'));
+    MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'elst.def'));
+    MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'mdhd.def'));
+    MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'hdlr.def'));
+    MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'smhd.def'));
+    MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'stsd.def'));
+    MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'stco.def'));
+    MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'co64.def'));
+    MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'stts.def'));
+  finally
+    FinalCode := StartOfFile + TypeDefs + ImpDef + CodeDefs + EndOfFile;
+    FinalInc := IncDefs;
 
-  MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'ftyp.def'));
-  MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'mvhd.def'));
-  MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'tkhd.def'));
-  MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'ilst.def'));
-  MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'chpl.def'));
-  MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'chap.def'));
-  MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'elst.def'));
-  MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'mdhd.def'));
-  MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'hdlr.def'));
-  MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'smhd.def'));
-//  MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'stsd.def'));
-
-  FinalCode := StartOfFile + TypeDefs + ImpDef + CodeDefs + EndOfFile;
-  FinalInc := IncDefs;
-
-  OutputData(FinalCode, FinalInc);
+    OutputData(FinalCode, FinalInc);
+  end;
 
 end;
 
@@ -212,6 +216,12 @@ begin
     Result := 'ReadUInt32(BufPos, AStream)'
   else if AVarType = 'UInt16' then
     Result := 'ReadUInt16(BufPos, AStream)'
+  else if AVarType = 'Int64' then
+    Result := 'ReadInt64(BufPos, AStream)'
+  else if AVarType = 'Int32' then
+    Result := 'ReadInt32(BufPos, AStream)'
+  else if AVarType = 'Int16' then
+    Result := 'ReadInt16(BufPos, AStream)'
   else if AVarType = 'Byte' then
     Result := 'ReadByte(BufPos, AStream)'
   else if AVarType = 'TMP4Fixed32' then
@@ -236,13 +246,17 @@ begin
     Result := 'ReadMetaDataList(BufPos, AStream, BufSize)'
   else if AVarType = 'TMP4EditDataList' then
     Result := 'ReadEditDataList(BufPos, AStream, BufSize)'
+  else if AVarType = 'TMP4SampleDescDataList' then
+    Result := 'ReadSampleDescDataList(BufPos, AStream, BufSize)'
+
   else if AVarType = 'TMP4HDLRString' then
     Result := 'ReadHDLR(BufPos, AStream, BufSize, FHandlerType)'
-
-  else if AVarType = 'TCString' then
-    Result := 'ReadCString(BufPos, AStream, BufSize)'
-  else if AVarType = 'TMP4SampleDescriptionArray' then
-    Result := 'ReadSampleDescriptionArray(BufPos, AStream, BufSize)'
+  else if AVarType = 'TUInt32Array' then
+    Result := 'ReadUInt32Array(BufPos, AStream, FEntryCount)'
+  else if AVarType = 'TUInt64Array' then
+    Result := 'ReadUInt64Array(BufPos, AStream, FEntryCount)'
+  else if AVarType = 'TSttsArray' then
+    Result := 'ReadSttsArray(BufPos, AStream, FEntryCount)'
 
   else
     Raise Exception.Create('Bad CreateDataCode');

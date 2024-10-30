@@ -175,7 +175,7 @@ begin
       if FS > 0 then
         begin
           try
-            if FS < 2147483647 then
+            if FS < (1024*1024*1024) then
               begin
                 FStream := TMemoryStream.Create as TStream;
                 TMemoryStream(FStream).LoadFromFile(FFilename);

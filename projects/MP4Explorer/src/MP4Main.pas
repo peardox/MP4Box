@@ -66,16 +66,23 @@ begin
 
   FName := 'Feet of Clay꞉ Discworld, Book 19.m4b';
   FName := 'Guards_Guards.m4b';
+  FName := 'The Fifth Elephant꞉ Discworld, Book 24.m4b';
 //  FName := 'Night Watch.m4b';
 
-  {$IF defined(mmMSWINDOWS)}
-
+//  {$define TEST1}
+  {$IF defined(TEST1)}
   FPath := 'C:\Users\simon\Music\Audible\Export';
   FName := 'Interesting Times_B09LZ2RNYV_LC_128_44100_Stereo.aax';
 //  FName := 'Love Triangle_B0CKTM55D7_LC_128_44100_Stereo.aax';
 
 //  FPath := 'C:\Users\simon\Desktop\iPlayer Recordings';
 //  FName := 'The_Fall_of_the_Roman_Empire.mp4';
+  {$ENDIF}
+//  {$define TEST2}
+  {$IF defined(TEST2)}
+  FPath := 'C:\Video\tests';
+  FName := 'Jason.And.The.Argonauts.1963.1080p.BluRay.x265.mp4';
+  FName := 'The.Hobbit.The.Battle.of.the.Five.Armies.2014.Extended.Cut.1080p.BluRay.H264.AC3.DD5.1.mp4';
   {$ENDIF}
 
 {$IF defined(QUICKLOG) and defined(DEBUG)}
@@ -129,26 +136,15 @@ begin
 
                 for P in T.GetProperties() do
                   begin
-                  {
-                  if P.PropertyType.ToString = 'TObjectList<MP4Atoms.TMP4MetaData>' then
-                      L := TAtomIlst(Atom).List;
-                      }
                     if not (P.Visibility in [mvPublished]) then
                       Continue;
-//                    if not P.IsReadable then
-//                      continue;
 
                     V := P.GetValue(Atom);
-                    {
-                    if P.Name = 'FourCC' then
-                    begin
-                      Memo1.Lines.Add(P.Name + ' : ' + FourCCToString(V.AsInteger));
-                    end
+
+                    if P.PropertyType.ToString = 'TMP4FourCC' then
+                      Memo1.Lines.Add(P.Name + ' : ' + FourCCToString(TMP4FourCC(V.AsInteger)) + ' : ' + P.PropertyType.ToString)
                     else
-                    }
-                    Memo1.Lines.Add(P.Name + ' : ' +
-                                    V.ToString + ' : ' +
-                                    P.PropertyType.ToString);
+                      Memo1.Lines.Add(P.Name + ' : ' + V.ToString + ' : ' + P.PropertyType.ToString);
 
                   end;
                 if L <> Nil then

@@ -1,0 +1,9 @@
+TAtomStts
+class(TAtomFullData)
+{ Time-to-sample atom - An atom that stores duration information for a media’s samples, providing a mapping from a time in a media to the corresponding data sample. }
+EntryCount
+Int32
+{ 4 bytes - Number of Entries in table }
+Table
+TSttsArray
+{ X bytes - Time-to-sample Table }

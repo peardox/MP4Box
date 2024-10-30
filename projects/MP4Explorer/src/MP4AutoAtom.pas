@@ -70,6 +70,14 @@ begin
       Result := TAtomHdlr.Create(FStream, AtomRec);
     $736D6864: // smhd
       Result := TAtomSmhd.Create(FStream, AtomRec);
+    $73747364: // stsd
+      Result := TAtomStsd.Create(FStream, AtomRec);
+    $7374636F: // stco
+      Result := TAtomStco.Create(FStream, AtomRec);
+    $636F3634: // co64
+      Result := TAtomCo64.Create(FStream, AtomRec);
+    $73747473: // stts
+      Result := TAtomStts.Create(FStream, AtomRec);
   else
     Result := Nil;
   end;

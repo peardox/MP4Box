@@ -1,0 +1,9 @@
+TAtomStco
+class(TAtomFullData)
+{ Chunk offset atom - An atom that identifies the location of each chunk of data in the media’s data stream. }
+EntryCount
+Int32
+{ 4 bytes - Number of Entries in chunk table }
+Table
+TUInt32Array
+{ X bytes - Chunk Table }
