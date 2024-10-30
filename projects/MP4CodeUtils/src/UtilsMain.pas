@@ -117,6 +117,8 @@ begin
     MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'stco.def'));
     MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'co64.def'));
     MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'stts.def'));
+    MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'stsc.def'));
+    MakeMP4AtomClass(IncDefs, TypeDefs, CodeDefs, TPath.Combine(IncludeTrailingPathDelimiter(AFilepath), 'stsz.def'));
   finally
     FinalCode := StartOfFile + TypeDefs + ImpDef + CodeDefs + EndOfFile;
     FinalInc := IncDefs;
@@ -257,6 +259,8 @@ begin
     Result := 'ReadUInt64Array(BufPos, AStream, FEntryCount)'
   else if AVarType = 'TSttsArray' then
     Result := 'ReadSttsArray(BufPos, AStream, FEntryCount)'
+  else if AVarType = 'TStscArray' then
+    Result := 'ReadStscArray(BufPos, AStream, FEntryCount)'
 
   else
     Raise Exception.Create('Bad CreateDataCode');

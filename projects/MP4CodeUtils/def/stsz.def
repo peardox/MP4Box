@@ -1,0 +1,13 @@
+TAtomStsz
+class(TAtomFullData)
+{ Sample size atom - An atom you use to specify the size of each sample in the media. }
+SampleSize
+Int32
+{ 4 bytes - A 32-bit integer specifying the sample size. }
+EntryCount
+Int32
+{ 4 bytes - Number of Entries in table }
+Table
+TUInt32Array
+{ X bytes - Sample Size Table }
+

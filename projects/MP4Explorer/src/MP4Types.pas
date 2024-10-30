@@ -35,6 +35,13 @@ type
   end;
   TSttsArray = Array of TSttsRec;
 
+  TStscRec = record
+    FirstChunk: Int32;
+    SamplesPerChunk: Int32;
+    SampleDescID: Int32;
+  end;
+  TStscArray = Array of TStscRec;
+
 const
   MediaZeroDayTime: UInt32 = 1462;
   { Midnight 1st Jan 1904 for MP4 is 0 so adjust fot TDateTime }

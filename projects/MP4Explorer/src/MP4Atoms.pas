@@ -63,6 +63,7 @@ type
     function ReadSampleDescDataList(var BufPos: Int64; var AStream: TStream; const ASize: Int32): TMP4SampleDescDataList;
     function ReadHDLR(var BufPos: Int64; var AStream: TStream; const ASize: Int32; const FCC: TMP4FourCC): String;
     function ReadSttsArray(var BufPos: Int64; var AStream: TStream; const AEntryCount: Int32): TSttsArray;
+    function ReadStscArray(var BufPos: Int64; var AStream: TStream; const AEntryCount: Int32): TStscArray;
     procedure ReadSkip(var BufPos: Int64; var AStream: TStream; const ASize: Int32);
 
   public
@@ -387,6 +388,29 @@ begin
   AStream.Read(T, ASize);
   SetLength(T, 0);
   BufPos := BufPos + ASize;
+end;
+
+function TAtomAbstractData.ReadStscArray(var BufPos: Int64;
+  var AStream: TStream; const AEntryCount: Int32): TStscArray;
+var
+  I: Int32;
+begin
+  if AStream.Position > (AStream.Size + (SizeOf(TStscRec) * AEntryCount)) then
+    Raise Exception.Create('Buffer too small');
+
+  SetLength(Result, AEntryCount);
+
+  for I := 0 to AEntryCount - 1 do
+    begin
+      AStream.Read(Result[I].FirstChunk, SizeOf(Int32));
+      Result[I].FirstChunk := SwapBytes32(Result[I].FirstChunk);
+      AStream.Read(Result[I].SamplesPerChunk, SizeOf(Int32));
+      Result[I].SamplesPerChunk := SwapBytes32(Result[I].SamplesPerChunk);
+      AStream.Read(Result[I].SampleDescID, SizeOf(Int32));
+      Result[I].SampleDescID := SwapBytes32(Result[I].SampleDescID);
+    end;
+
+  BufPos := BufPos+(SizeOf(TStscRec) * AEntryCount);
 end;
 
 function TAtomAbstractData.ReadSttsArray(var BufPos: Int64;

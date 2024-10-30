@@ -1,0 +1,10 @@
+TAtomStsc
+class(TAtomFullData)
+{ Sample-to-chunk atom - An atom that stores chunk information for the samples in a media. }
+EntryCount
+Int32
+{ 4 bytes - Number of Entries in table }
+Table
+TStscArray
+{ X bytes - Sample-to-chunk Table }
+

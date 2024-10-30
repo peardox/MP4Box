@@ -78,6 +78,10 @@ begin
       Result := TAtomCo64.Create(FStream, AtomRec);
     $73747473: // stts
       Result := TAtomStts.Create(FStream, AtomRec);
+    $73747363: // stsc
+      Result := TAtomStsc.Create(FStream, AtomRec);
+    $7374737A: // stsz
+      Result := TAtomStsz.Create(FStream, AtomRec);
   else
     Result := Nil;
   end;

@@ -85,6 +85,13 @@ begin
   FName := 'The.Hobbit.The.Battle.of.the.Five.Armies.2014.Extended.Cut.1080p.BluRay.H264.AC3.DD5.1.mp4';
   {$ENDIF}
 
+  {$define TEST3}
+  {$IF defined(TEST3)}
+  FPath := 'C:\Users\simon\Music\Audible\Download';
+  FName := 'Interesting Times_B09LZ2RNYV_LC_128_44100_Stereo.m4b';
+//  FName := 'Love Triangle_B0CKTM55D7_LC_128_44100_Stereo.m4b';
+  {$ENDIF}
+
 {$IF defined(QUICKLOG) and defined(DEBUG)}
   Log('Path = ' + FPath, etInfo);
   Log('File = ' + FName, etInfo);

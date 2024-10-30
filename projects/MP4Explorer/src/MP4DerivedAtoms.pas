@@ -285,6 +285,37 @@ type  TAtomFtyp = class(TAtomLiteData) { $66747970: // ftyp }
     property Table: TSttsArray read FTable write FTable;
   end;
 
+  TAtomStsc = class(TAtomFullData) { $73747363: // stsc }
+  { Sample-to-chunk atom - An atom that stores chunk information for the samples in a media. }
+  strict private
+    FEntryCount: Int32;
+    { 4 bytes - Number of Entries in table }
+    FTable: TStscArray;
+    { X bytes - Sample-to-chunk Table }
+  public
+    procedure ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64); override;
+  published
+    property EntryCount: Int32 read FEntryCount write FEntryCount;
+    property Table: TStscArray read FTable write FTable;
+  end;
+
+  TAtomStsz = class(TAtomFullData) { $7374737A: // stsz }
+  { Sample size atom - An atom you use to specify the size of each sample in the media. }
+  strict private
+    FSampleSize: Int32;
+    { 4 bytes - A 32-bit integer specifying the sample size. }
+    FEntryCount: Int32;
+    { 4 bytes - Number of Entries in table }
+    FTable: TUInt32Array;
+    { X bytes - Sample Size Table }
+  public
+    procedure ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64); override;
+  published
+    property SampleSize: Int32 read FSampleSize write FSampleSize;
+    property EntryCount: Int32 read FEntryCount write FEntryCount;
+    property Table: TUInt32Array read FTable write FTable;
+  end;
+
 implementation
 { TAtomFtyp }
 
@@ -425,6 +456,23 @@ procedure TAtomStts.ReadFromStream(var BufPos: Int64; var AStream: TStream; cons
 begin
   FEntryCount := ReadInt32(BufPos, AStream);
   FTable := ReadSttsArray(BufPos, AStream, FEntryCount);
+end;
+
+{ TAtomStsc }
+
+procedure TAtomStsc.ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64);
+begin
+  FEntryCount := ReadInt32(BufPos, AStream);
+  FTable := ReadStscArray(BufPos, AStream, FEntryCount);
+end;
+
+{ TAtomStsz }
+
+procedure TAtomStsz.ReadFromStream(var BufPos: Int64; var AStream: TStream; const BufSize: Int64);
+begin
+  FSampleSize := ReadInt32(BufPos, AStream);
+  FEntryCount := ReadInt32(BufPos, AStream);
+  FTable := ReadUInt32Array(BufPos, AStream, FEntryCount);
 end;
 
 end.
